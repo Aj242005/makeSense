@@ -1,0 +1,155 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f45175e301b83a1419ff95c5c802ff48, type: 3}
+  m_Name: Bahrain_TrackData
+  m_EditorClassIdentifier: GridSense.Track:TrackData
+  CircuitName: Bahrain International Circuit
+  LayoutName: Grand Prix Track
+  SourceProvenance: Official FIA circuit layout metrics with corner severities and
+    3 standard timing sectors.
+  TotalLengthMeters: 5412
+  StartFinishLinePosition: {x: 3.5, y: 0, z: -12}
+  StartFinishLineDirection: {x: 0, y: 0, z: 1}
+  Sectors:
+  - SectorNumber: 1
+    StartDistanceM: 0
+    EndDistanceM: 1640
+  - SectorNumber: 2
+    StartDistanceM: 1640
+    EndDistanceM: 3870
+  - SectorNumber: 3
+    StartDistanceM: 3870
+    EndDistanceM: 5412
+  Corners:
+  - CornerNumber: 1
+    CornerName: Turn 1 (Michael Schumacher)
+    DistanceAlongTrackM: 650
+    Severity: 3
+    TurnDirection: Right
+    MinApexSpeedKmh: 65
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 2
+    CornerName: Turn 2
+    DistanceAlongTrackM: 800
+    Severity: 2
+    TurnDirection: Left
+    MinApexSpeedKmh: 130
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 3
+    CornerName: Turn 3
+    DistanceAlongTrackM: 950
+    Severity: 0
+    TurnDirection: Right
+    MinApexSpeedKmh: 240
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 4
+    CornerName: Turn 4
+    DistanceAlongTrackM: 1550
+    Severity: 3
+    TurnDirection: Right
+    MinApexSpeedKmh: 135
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 5
+    CornerName: Turn 5
+    DistanceAlongTrackM: 1850
+    Severity: 1
+    TurnDirection: Left
+    MinApexSpeedKmh: 220
+    BaseGripMultiplier: 0.98
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 6
+    CornerName: Turn 6
+    DistanceAlongTrackM: 2000
+    Severity: 1
+    TurnDirection: Right
+    MinApexSpeedKmh: 210
+    BaseGripMultiplier: 0.98
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 7
+    CornerName: Turn 7
+    DistanceAlongTrackM: 2150
+    Severity: 2
+    TurnDirection: Left
+    MinApexSpeedKmh: 170
+    BaseGripMultiplier: 0.98
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 8
+    CornerName: Turn 8
+    DistanceAlongTrackM: 2550
+    Severity: 4
+    TurnDirection: Right
+    MinApexSpeedKmh: 70
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 9
+    CornerName: Turn 9
+    DistanceAlongTrackM: 2900
+    Severity: 2
+    TurnDirection: Left
+    MinApexSpeedKmh: 160
+    BaseGripMultiplier: 0.95
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 10
+    CornerName: Turn 10
+    DistanceAlongTrackM: 3100
+    Severity: 4
+    TurnDirection: Left
+    MinApexSpeedKmh: 60
+    BaseGripMultiplier: 0.95
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 11
+    CornerName: Turn 11
+    DistanceAlongTrackM: 3750
+    Severity: 1
+    TurnDirection: Left
+    MinApexSpeedKmh: 210
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 12
+    CornerName: Turn 12
+    DistanceAlongTrackM: 4150
+    Severity: 0
+    TurnDirection: Right
+    MinApexSpeedKmh: 260
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 13
+    CornerName: Turn 13
+    DistanceAlongTrackM: 4350
+    Severity: 2
+    TurnDirection: Right
+    MinApexSpeedKmh: 140
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 14
+    CornerName: Turn 14
+    DistanceAlongTrackM: 5050
+    Severity: 3
+    TurnDirection: Right
+    MinApexSpeedKmh: 110
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  - CornerNumber: 15
+    CornerName: Turn 15
+    DistanceAlongTrackM: 5200
+    Severity: 2
+    TurnDirection: Right
+    MinApexSpeedKmh: 180
+    BaseGripMultiplier: 1
+    ApexWorldPosition: {x: 0, y: 0, z: 0}
+  DefaultAmbientTempC: 25
+  DefaultTrackTempC: 35
+  DefaultElevationM: 0

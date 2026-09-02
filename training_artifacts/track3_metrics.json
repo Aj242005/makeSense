@@ -1,0 +1,17 @@
+{
+  "model_name": "Track 3 Tyre Degradation Isolation EBM (FastF1 Real Telemetry)",
+  "data_source": "FastF1 Official Race Telemetry (2023 Bahrain, Austria, Japan, Abu Dhabi GPs)",
+  "total_real_laps": 3758,
+  "total_real_stints": 220,
+  "training_laps": 3006,
+  "held_out_validation_laps": 752,
+  "held_out_stints": 44,
+  "group_split_strategy": "GroupKFold by Stint ID (Zero row-level leakage)",
+  "ebm_held_out_rmse_s": 0.5905,
+  "ebm_held_out_mae_s": 0.4467,
+  "ebm_held_out_r2": 0.0456,
+  "onnx_held_out_rmse_s": 0.6157,
+  "onnx_held_out_mae_s": 0.4624,
+  "onnx_held_out_r2": -0.0374,
+  "onnx_export_path": "Assets/MLModels/tyre_degradation_ebm.onnx"
+}

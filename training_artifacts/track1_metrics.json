@@ -1,0 +1,182 @@
+{
+  "model_name": "Track 1 Energy Deployment PPO Policy (Budget-Stabilized Vectorized Run)",
+  "training_timesteps": 400000,
+  "total_wall_clock_seconds": 136.58,
+  "actual_throughput_sps": 2924.0,
+  "tensorboard_log_dir": "C:\\Unity-In-Diversity\\makeSense\\runs\\track1_ppo_stabilized_1788042547",
+  "history_milestones": {
+    "steps": [
+      2048,
+      30720,
+      61440,
+      92160,
+      122880,
+      153600,
+      184320,
+      215040,
+      245760,
+      276480,
+      307200,
+      337920,
+      368640,
+      399360
+    ],
+    "rewards": [
+      -0.0851,
+      -0.0327,
+      -0.0174,
+      -0.0249,
+      -0.0118,
+      -0.0079,
+      -0.0253,
+      -0.0131,
+      -0.0133,
+      -0.0187,
+      -0.014,
+      -0.0109,
+      -0.0227,
+      -0.0107
+    ],
+    "explained_variance": [
+      -0.05,
+      -0.0058,
+      -0.0003,
+      -0.0001,
+      -0.0001,
+      -0.0,
+      -0.0001,
+      -0.0004,
+      -0.0259,
+      0.1913,
+      0.3719,
+      0.3513,
+      0.4588,
+      0.4062
+    ],
+    "value_losses": [
+      1.1672,
+      0.586,
+      0.3937,
+      0.3141,
+      0.4333,
+      0.3844,
+      0.3179,
+      0.3444,
+      0.312,
+      0.2379,
+      0.2309,
+      0.1912,
+      0.1731,
+      0.243
+    ],
+    "mix_progression": [
+      {
+        "push": 26.5,
+        "balanced": 25.1,
+        "hold": 25.2,
+        "save": 23.2,
+        "aggressive_braking": 48.6
+      },
+      {
+        "push": 17.9,
+        "balanced": 66.2,
+        "hold": 14.0,
+        "save": 2.0,
+        "aggressive_braking": 67.2
+      },
+      {
+        "push": 5.9,
+        "balanced": 87.3,
+        "hold": 6.1,
+        "save": 0.7,
+        "aggressive_braking": 83.3
+      },
+      {
+        "push": 2.2,
+        "balanced": 94.6,
+        "hold": 2.7,
+        "save": 0.4,
+        "aggressive_braking": 93.0
+      },
+      {
+        "push": 2.5,
+        "balanced": 95.1,
+        "hold": 1.9,
+        "save": 0.5,
+        "aggressive_braking": 93.3
+      },
+      {
+        "push": 3.8,
+        "balanced": 94.4,
+        "hold": 1.7,
+        "save": 0.1,
+        "aggressive_braking": 96.8
+      },
+      {
+        "push": 8.3,
+        "balanced": 89.7,
+        "hold": 1.8,
+        "save": 0.2,
+        "aggressive_braking": 94.6
+      },
+      {
+        "push": 12.7,
+        "balanced": 86.3,
+        "hold": 0.7,
+        "save": 0.2,
+        "aggressive_braking": 96.0
+      },
+      {
+        "push": 11.3,
+        "balanced": 86.1,
+        "hold": 2.0,
+        "save": 0.6,
+        "aggressive_braking": 93.8
+      },
+      {
+        "push": 7.9,
+        "balanced": 90.3,
+        "hold": 1.3,
+        "save": 0.4,
+        "aggressive_braking": 95.3
+      },
+      {
+        "push": 10.6,
+        "balanced": 86.7,
+        "hold": 2.2,
+        "save": 0.4,
+        "aggressive_braking": 91.8
+      },
+      {
+        "push": 11.0,
+        "balanced": 86.9,
+        "hold": 1.7,
+        "save": 0.3,
+        "aggressive_braking": 93.7
+      },
+      {
+        "push": 9.3,
+        "balanced": 88.3,
+        "hold": 2.2,
+        "save": 0.2,
+        "aggressive_braking": 92.6
+      },
+      {
+        "push": 10.5,
+        "balanced": 86.9,
+        "hold": 2.1,
+        "save": 0.5,
+        "aggressive_braking": 93.3
+      }
+    ]
+  },
+  "final_converged_mix": {
+    "push_pct": 10.1,
+    "balanced_pct": 87.2,
+    "hold_pct": 2.5,
+    "save_pct": 0.3,
+    "normal_braking_pct": 8.0,
+    "aggressive_braking_pct": 92.0
+  },
+  "onnx_export_path": "Assets/MLModels/energy_deployment_ppo.onnx"
+}
