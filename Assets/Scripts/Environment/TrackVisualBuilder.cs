@@ -1038,7 +1038,7 @@ namespace GridSense.Environment
             MeshBuilder apron = new MeshBuilder(1);
             {
                 int n = fr.Length;
-                TrackGrid probe = new TrackGrid(fr);
+                TrackGrid trackGrid = new TrackGrid(fr);
                 int window = Mathf.RoundToInt(160f / StationSpacing);
                 float clearOf = spec.HalfWidth + spec.KerbPad + 4f;
 
@@ -1049,7 +1049,7 @@ namespace GridSense.Environment
                     {
                         Vector3 edgePt = fr[i].Pos + fr[i].Right * (side * edge);
                         float ty;
-                        float far = probe.Distance(edgePt, i, window, out ty);
+                        float far = trackGrid.Distance(edgePt, i, window, out ty);
                         reach[i] = Mathf.Clamp(far - clearOf, 0f, 30f);
                     }
                     // smooth the reach so the apron edge does not step
