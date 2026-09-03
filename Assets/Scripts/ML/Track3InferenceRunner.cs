@@ -38,6 +38,13 @@ namespace GridSense.ML
         private Worker worker;
         private bool isModelLoaded = false;
 
+        /// <summary>
+        /// True only when the ONNX Track 3 degradation model actually loaded. When it is false this
+        /// component still produces output, but from the analytical heuristic rather than the
+        /// trained model, and any surface reporting it must say so instead of claiming inference.
+        /// </summary>
+        public bool IsModelLoaded { get { return isModelLoaded; } }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

@@ -1,399 +1,671 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using GridSense.Core;
 using GridSense.Physics;
-using GridSense.Track;
 
 namespace GridSense.UI
 {
     /// <summary>
-    /// PitWallDashboardController manages the UI Toolkit Pit-Wall interface:
-    /// - Listens to 50Hz telemetry updates from SimulationCore and CarPhysicsController.
-    /// - Updates Driver Telemetry (Speed, Gear, RPM bar, Pedals, Chassis heat map).
-    /// - Updates Track 1 Energy Deployment recommendations, SoC gauge, and Tactical AI explainability bars.
-    /// - Updates Track 3 pure tyre degradation breakdown and isolated delta contributions.
-    /// - Updates live timing sectors and lap deltas.
+    /// Binds the pit wall to live state. Two disciplines run through the whole class:
+    ///
+    ///   Command versus actual — anything the models recommend is written into a magenta command
+    ///   cell beside the driver's actual value, so the gap is the thing you read.
+    ///
+    ///   Honest degradation — when an inference runner is missing, the column says so and shows
+    ///   nothing. It never falls back to a plausible-looking number, and the physics heuristic
+    ///   baseline is never labelled as model output.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class PitWallDashboardController : MonoBehaviour
     {
-        [Header("Car Reference (Optional, auto-found)")]
-        [SerializeField] private CarPhysicsController carPhysics;
+        [SerializeField] private CarPhysicsController car;
+        [SerializeField] private KeyCode toggleKey = KeyCode.P;
+        [SerializeField] private bool visibleOnStart;
 
-        private UIDocument uiDocument;
-        private VisualElement rootElement;
+        private UIDocument doc;
+        private VisualElement root;
+        private bool built;
 
-        // Header Elements
-        private Label circuitLabel;
-        private Label systemStatusLabel;
-        private Label lapCounterLabel;
-        private Label fuelRemainingLabel;
-        private Label stintTimeLabel;
+        // masthead
+        private Label sessionLine, lapValue, stintValue, fuelValue, inferenceValue;
 
-        // Driver Telemetry Elements
-        private Label gearValue;
-        private Label speedValue;
-        private Label rpmValue;
-        private VisualElement rpmBarFill;
-        private Label throttleValue;
-        private VisualElement throttleBarFill;
-        private Label brakeValue;
-        private VisualElement brakeBarFill;
-        private Label latGValue;
-        private Label longGValue;
-        private Label drsStateLabel;
+        // stint column
+        private Label stintStatus, lapElapsed, lapDelta;
+        private Label s1Time, s2Time, s3Time;
+        private VisualElement s1Bar, s2Bar, s3Bar;
+        private Label speedValue, gearValue, drsValue, gapAheadValue, evolutionValue;
+        private VisualElement lapTable;
+        private Label lapTableEmpty;
 
-        // 4-Wheel Temperatures
-        private Label tyreTempFL;
-        private Label brakeTempFL;
-        private Label tyreTempFR;
-        private Label brakeTempFR;
-        private Label tyreTempRL;
-        private Label brakeTempRL;
-        private Label tyreTempRR;
-        private Label brakeTempRR;
+        // track 3
+        private Label track3Status;
+        private VisualElement track3Offline, track3Body;
+        private VisualElement fuelNeg, fuelPos, trafficNeg, trafficPos, evoNeg, evoPos, tyreNeg, tyrePos;
+        private Label fuelValueS, trafficValueS, evolutionValueS, tyreValueS, totalDeltaS;
+        private VisualElement bandSpan, bandLine, bandTruth;
+        private Label bandLower, bandPredicted, bandUpper, groundTruthValue, residualValue;
+        private Label wearFL, wearFR, wearRL, wearRR, tempFL, tempFR, tempRL, tempRR;
+        private VisualElement wearFillFL, wearFillFR, wearFillRL, wearFillRR;
 
-        // Track 1 Energy Elements
-        private Label batterySocPct;
-        private Label batteryEnergyMj;
-        private VisualElement batterySocFill;
-        private Label powerFlowLabel;
-        private VisualElement modeBadge;
-        private Label modeBadgeText;
-        private Label gapAheadLabel;
-        private Label closingRateLabel;
-        private Label overtakeProbLabel;
+        // track 1
+        private Label track1Status;
+        private VisualElement track1Offline, track1Body;
+        private Label modeCommand, modeActual, rationale, brakingCommand, riskValue, riskCategory;
+        private VisualElement riskFill, socFill, socBug;
+        private Label socValue, budgetDelta;
+        private VisualElement budgetNeg, budgetPos, wearPenNeg, wearPenPos, brakePenNeg, brakePenPos, oppNeg, oppPos;
+        private Label budgetFactor, wearPenFactor, brakePenFactor, oppFactor;
 
-        // Track 1 Explainability
-        private VisualElement featGapFill;
-        private Label featGapVal;
-        private VisualElement featSocFill;
-        private Label featSocVal;
-        private VisualElement featWearFill;
-        private Label featWearVal;
-        private VisualElement featThermFill;
-        private Label featThermVal;
+        private Label footerRight;
+        private StintPlot stintPlot;
 
-        // Track 3 Tyre Degradation Elements
-        private Label tyreCompoundBadge;
-        private Label totalTyreDeltaLabel;
-        private Label deltaPureWearLabel;
-        private VisualElement barPureWear;
-        private Label deltaThermalLabel;
-        private VisualElement barThermal;
-        private Label deltaFuelLabel;
-        private VisualElement barFuel;
-        private Label deltaTrafficLabel;
-        private VisualElement barTraffic;
-        private Label deltaTrackLabel;
-        private VisualElement barTrack;
-        private Label strategyAdvisoryText;
+        private struct LapRecord
+        {
+            public int Lap;
+            public float Time;
+            public TyreCompound Compound;
+            public float WearPct;
+        }
 
-        // Timing Elements
-        private Label sector1Time;
-        private Label sector1Delta;
-        private Label sector2Time;
-        private Label sector2Delta;
-        private Label sector3Time;
-        private Label sector3Delta;
-        private Label lastLapTime;
-        private Label bestLapTime;
-        private Label optimalLapTime;
+        private readonly List<LapRecord> laps = new List<LapRecord>();
+        private int lastSeenLap = 1;
+        private float stintClock;
+        private float bestLapSeen;
 
-        private float sessionElapsedTime = 0.0f;
-        private float bestLapRecorded = 89.840f;
-        private float currentLapStartTime = 0.0f;
+        [SerializeField] private int stintLaps = 20;
+
+        // ==================================================================== lifecycle
 
         private void Awake()
         {
-            uiDocument = GetComponent<UIDocument>();
-            if (carPhysics == null)
-            {
-                carPhysics = FindFirstObjectByType<CarPhysicsController>(FindObjectsInactive.Include);
-            }
+            doc = GetComponent<UIDocument>();
+            if (car == null) car = UnityEngine.Object.FindFirstObjectByType<CarPhysicsController>();
         }
 
         private void OnEnable()
         {
-            rootElement = uiDocument.rootVisualElement;
-            if (rootElement == null) return;
-
-            BindUIElements();
-
-            if (SimulationCore.Instance != null)
-            {
-                SimulationCore.Instance.OnStateUpdated += HandleCarStateUpdated;
-                SimulationCore.Instance.OnTrack1ExplainabilityUpdated += HandleTrack1Updated;
-                SimulationCore.Instance.OnTrack3ExplainabilityUpdated += HandleTrack3Updated;
-                SimulationCore.Instance.OnLapCompleted += HandleLapCompleted;
-                SimulationCore.Instance.OnSectorCompleted += HandleSectorCompleted;
-            }
+            built = false;
         }
 
-        private void OnDisable()
+        private void Bind()
         {
-            if (SimulationCore.Instance != null)
+            root = doc != null ? doc.rootVisualElement : null;
+            if (root == null) return;
+
+            VisualElement r = root;
+            sessionLine = r.Q<Label>("SessionLine");
+            lapValue = r.Q<Label>("LapValue");
+            stintValue = r.Q<Label>("StintValue");
+            fuelValue = r.Q<Label>("FuelValue");
+            inferenceValue = r.Q<Label>("InferenceValue");
+
+            stintStatus = r.Q<Label>("StintStatus");
+            lapElapsed = r.Q<Label>("LapElapsed");
+            lapDelta = r.Q<Label>("LapDelta");
+            s1Time = r.Q<Label>("S1Time"); s2Time = r.Q<Label>("S2Time"); s3Time = r.Q<Label>("S3Time");
+            s1Bar = r.Q<VisualElement>("S1Bar"); s2Bar = r.Q<VisualElement>("S2Bar"); s3Bar = r.Q<VisualElement>("S3Bar");
+            speedValue = r.Q<Label>("SpeedValue");
+            gearValue = r.Q<Label>("GearValue");
+            drsValue = r.Q<Label>("DrsValue");
+            gapAheadValue = r.Q<Label>("GapAheadValue");
+            evolutionValue = r.Q<Label>("EvolutionValue");
+            lapTable = r.Q<VisualElement>("LapTable");
+            lapTableEmpty = r.Q<Label>("LapTableEmpty");
+
+            track3Status = r.Q<Label>("Track3Status");
+            track3Offline = r.Q<VisualElement>("Track3Offline");
+            track3Body = r.Q<VisualElement>("Track3Body");
+            fuelNeg = r.Q<VisualElement>("FuelNeg"); fuelPos = r.Q<VisualElement>("FuelPos");
+            trafficNeg = r.Q<VisualElement>("TrafficNeg"); trafficPos = r.Q<VisualElement>("TrafficPos");
+            evoNeg = r.Q<VisualElement>("EvolutionNeg"); evoPos = r.Q<VisualElement>("EvolutionPos");
+            tyreNeg = r.Q<VisualElement>("TyreNeg"); tyrePos = r.Q<VisualElement>("TyrePos");
+            fuelValueS = r.Q<Label>("FuelValueS");
+            trafficValueS = r.Q<Label>("TrafficValueS");
+            evolutionValueS = r.Q<Label>("EvolutionValueS");
+            tyreValueS = r.Q<Label>("TyreValueS");
+            totalDeltaS = r.Q<Label>("TotalDeltaS");
+            bandSpan = r.Q<VisualElement>("BandSpan");
+            bandLine = r.Q<VisualElement>("BandLine");
+            bandTruth = r.Q<VisualElement>("BandTruth");
+            bandLower = r.Q<Label>("BandLower");
+            bandPredicted = r.Q<Label>("BandPredicted");
+            bandUpper = r.Q<Label>("BandUpper");
+            groundTruthValue = r.Q<Label>("GroundTruthValue");
+            residualValue = r.Q<Label>("ResidualValue");
+            wearFL = r.Q<Label>("WearFL"); wearFR = r.Q<Label>("WearFR");
+            wearRL = r.Q<Label>("WearRL"); wearRR = r.Q<Label>("WearRR");
+            tempFL = r.Q<Label>("TempFL"); tempFR = r.Q<Label>("TempFR");
+            tempRL = r.Q<Label>("TempRL"); tempRR = r.Q<Label>("TempRR");
+            wearFillFL = r.Q<VisualElement>("WearFillFL"); wearFillFR = r.Q<VisualElement>("WearFillFR");
+            wearFillRL = r.Q<VisualElement>("WearFillRL"); wearFillRR = r.Q<VisualElement>("WearFillRR");
+
+            track1Status = r.Q<Label>("Track1Status");
+            track1Offline = r.Q<VisualElement>("Track1Offline");
+            track1Body = r.Q<VisualElement>("Track1Body");
+            modeCommand = r.Q<Label>("ModeCommand");
+            modeActual = r.Q<Label>("ModeActual");
+            rationale = r.Q<Label>("Rationale");
+            brakingCommand = r.Q<Label>("BrakingCommand");
+            riskValue = r.Q<Label>("RiskValue");
+            riskCategory = r.Q<Label>("RiskCategory");
+            riskFill = r.Q<VisualElement>("RiskFill");
+            socFill = r.Q<VisualElement>("SocFill");
+            socBug = r.Q<VisualElement>("SocBug");
+            socValue = r.Q<Label>("SocValue");
+            budgetDelta = r.Q<Label>("BudgetDelta");
+            budgetNeg = r.Q<VisualElement>("BudgetNeg"); budgetPos = r.Q<VisualElement>("BudgetPos");
+            wearPenNeg = r.Q<VisualElement>("WearPenNeg"); wearPenPos = r.Q<VisualElement>("WearPenPos");
+            brakePenNeg = r.Q<VisualElement>("BrakePenNeg"); brakePenPos = r.Q<VisualElement>("BrakePenPos");
+            oppNeg = r.Q<VisualElement>("OppNeg"); oppPos = r.Q<VisualElement>("OppPos");
+            budgetFactor = r.Q<Label>("BudgetFactor");
+            wearPenFactor = r.Q<Label>("WearPenFactor");
+            brakePenFactor = r.Q<Label>("BrakePenFactor");
+            oppFactor = r.Q<Label>("OppFactor");
+
+            footerRight = r.Q<Label>("FooterRight");
+
+            VisualElement plotHost = r.Q<VisualElement>("StintPlotHost");
+            if (plotHost != null)
             {
-                SimulationCore.Instance.OnStateUpdated -= HandleCarStateUpdated;
-                SimulationCore.Instance.OnTrack1ExplainabilityUpdated -= HandleTrack1Updated;
-                SimulationCore.Instance.OnTrack3ExplainabilityUpdated -= HandleTrack3Updated;
-                SimulationCore.Instance.OnLapCompleted -= HandleLapCompleted;
-                SimulationCore.Instance.OnSectorCompleted -= HandleSectorCompleted;
+                plotHost.Clear();
+                stintPlot = new StintPlot();
+                stintPlot.SetStintLength(stintLaps);
+                plotHost.Add(stintPlot);
             }
-        }
 
-        private void BindUIElements()
-        {
-            // Header
-            circuitLabel = rootElement.Q<Label>("CircuitLabel");
-            systemStatusLabel = rootElement.Q<Label>("SystemStatusLabel");
-            lapCounterLabel = rootElement.Q<Label>("LapCounterLabel");
-            fuelRemainingLabel = rootElement.Q<Label>("FuelRemainingLabel");
-            stintTimeLabel = rootElement.Q<Label>("StintTimeLabel");
-
-            // Telemetry
-            gearValue = rootElement.Q<Label>("GearValue");
-            speedValue = rootElement.Q<Label>("SpeedValue");
-            rpmValue = rootElement.Q<Label>("RpmValue");
-            rpmBarFill = rootElement.Q<VisualElement>("RpmBarFill");
-            throttleValue = rootElement.Q<Label>("ThrottleValue");
-            throttleBarFill = rootElement.Q<VisualElement>("ThrottleBarFill");
-            brakeValue = rootElement.Q<Label>("BrakeValue");
-            brakeBarFill = rootElement.Q<VisualElement>("BrakeBarFill");
-            latGValue = rootElement.Q<Label>("LatGValue");
-            longGValue = rootElement.Q<Label>("LongGValue");
-            drsStateLabel = rootElement.Q<Label>("DrsStateLabel");
-
-            // Corner temps
-            tyreTempFL = rootElement.Q<Label>("TyreTempFL");
-            brakeTempFL = rootElement.Q<Label>("BrakeTempFL");
-            tyreTempFR = rootElement.Q<Label>("TyreTempFR");
-            brakeTempFR = rootElement.Q<Label>("BrakeTempFR");
-            tyreTempRL = rootElement.Q<Label>("TyreTempRL");
-            brakeTempRL = rootElement.Q<Label>("BrakeTempRL");
-            tyreTempRR = rootElement.Q<Label>("TyreTempRR");
-            brakeTempRR = rootElement.Q<Label>("BrakeTempRR");
-
-            // Track 1
-            batterySocPct = rootElement.Q<Label>("BatterySocPct");
-            batteryEnergyMj = rootElement.Q<Label>("BatteryEnergyMj");
-            batterySocFill = rootElement.Q<VisualElement>("BatterySocFill");
-            powerFlowLabel = rootElement.Q<Label>("PowerFlowLabel");
-            modeBadge = rootElement.Q<VisualElement>("ModeBadge");
-            modeBadgeText = rootElement.Q<Label>("ModeBadgeText");
-            gapAheadLabel = rootElement.Q<Label>("GapAheadLabel");
-            closingRateLabel = rootElement.Q<Label>("ClosingRateLabel");
-            overtakeProbLabel = rootElement.Q<Label>("OvertakeProbLabel");
-
-            // Explainability
-            featGapFill = rootElement.Q<VisualElement>("FeatGapFill");
-            featGapVal = rootElement.Q<Label>("FeatGapVal");
-            featSocFill = rootElement.Q<VisualElement>("FeatSocFill");
-            featSocVal = rootElement.Q<Label>("FeatSocVal");
-            featWearFill = rootElement.Q<VisualElement>("FeatWearFill");
-            featWearVal = rootElement.Q<Label>("FeatWearVal");
-            featThermFill = rootElement.Q<VisualElement>("FeatThermFill");
-            featThermVal = rootElement.Q<Label>("FeatThermVal");
-
-            // Track 3
-            tyreCompoundBadge = rootElement.Q<Label>("TyreCompoundBadge");
-            totalTyreDeltaLabel = rootElement.Q<Label>("TotalTyreDeltaLabel");
-            deltaPureWearLabel = rootElement.Q<Label>("DeltaPureWearLabel");
-            barPureWear = rootElement.Q<VisualElement>("BarPureWear");
-            deltaThermalLabel = rootElement.Q<Label>("DeltaThermalLabel");
-            barThermal = rootElement.Q<VisualElement>("BarThermal");
-            deltaFuelLabel = rootElement.Q<Label>("DeltaFuelLabel");
-            barFuel = rootElement.Q<VisualElement>("BarFuel");
-            deltaTrafficLabel = rootElement.Q<Label>("DeltaTrafficLabel");
-            barTraffic = rootElement.Q<VisualElement>("BarTraffic");
-            deltaTrackLabel = rootElement.Q<Label>("DeltaTrackLabel");
-            barTrack = rootElement.Q<VisualElement>("BarTrack");
-            strategyAdvisoryText = rootElement.Q<Label>("StrategyAdvisoryText");
-
-            // Timing
-            sector1Time = rootElement.Q<Label>("Sector1Time");
-            sector1Delta = rootElement.Q<Label>("Sector1Delta");
-            sector2Time = rootElement.Q<Label>("Sector2Time");
-            sector2Delta = rootElement.Q<Label>("Sector2Delta");
-            sector3Time = rootElement.Q<Label>("Sector3Time");
-            sector3Delta = rootElement.Q<Label>("Sector3Delta");
-            lastLapTime = rootElement.Q<Label>("LastLapTime");
-            bestLapTime = rootElement.Q<Label>("BestLapTime");
-            optimalLapTime = rootElement.Q<Label>("OptimalLapTime");
+            root.style.display = visibleOnStart ? DisplayStyle.Flex : DisplayStyle.None;
+            built = true;
         }
 
         private void Update()
         {
-            sessionElapsedTime += Time.deltaTime;
-            if (stintTimeLabel != null)
+            if (!built) Bind();
+            if (!built || root == null) return;
+
+            if (UnityEngine.Input.GetKeyDown(toggleKey))
             {
-                int minutes = (int)(sessionElapsedTime / 60.0f);
-                float seconds = sessionElapsedTime % 60.0f;
-                stintTimeLabel.text = $"{minutes:D2}:{seconds:05.2f}";
+                bool showing = root.style.display == DisplayStyle.Flex;
+                root.style.display = showing ? DisplayStyle.None : DisplayStyle.Flex;
             }
 
-            // Continuous telemetry polling if carPhysics is attached
-            if (carPhysics != null)
+            if (root.style.display == DisplayStyle.None) return;
+
+            if (F1TelemetryHUD.Instance != null && F1TelemetryHUD.Instance.IsRacing)
+                stintClock += Time.deltaTime;
+
+            RecordCompletedLaps();
+            PaintMasthead();
+            PaintStint();
+            PaintTrack3();
+            PaintTrack1();
+        }
+
+        // ==================================================================== data access
+
+        private static bool CoreLive { get { return SimulationCore.Instance != null; } }
+
+        private static bool Track1Live
+        {
+            get { return SimulationCore.Instance != null && GridSense.ML.Track1InferenceRunner.Instance != null; }
+        }
+
+        private static bool Track3Live
+        {
+            get { return SimulationCore.Instance != null && GridSense.ML.Track3InferenceRunner.Instance != null; }
+        }
+
+        /// <summary>
+        /// The runner produces output either way, so the label has to distinguish a loaded ONNX
+        /// policy from the analytical fallback. Calling the heuristic "PPO" would be a lie the
+        /// user could not detect.
+        /// </summary>
+        private static bool Track1Model
+        {
+            get
             {
-                UpdateDriverInputs();
+                return GridSense.ML.Track1InferenceRunner.Instance != null
+                    && GridSense.ML.Track1InferenceRunner.Instance.IsModelLoaded;
             }
         }
 
-        private void UpdateDriverInputs()
+        private static bool Track3Model
         {
-            if (throttleValue != null) throttleValue.text = $"{carPhysics.ThrottleInput * 100.0f:F0}%";
-            if (throttleBarFill != null) throttleBarFill.style.width = Length.Percent(carPhysics.ThrottleInput * 100.0f);
-
-            if (brakeValue != null) brakeValue.text = $"{carPhysics.BrakeInput * 100.0f:F0}%";
-            if (brakeBarFill != null) brakeBarFill.style.width = Length.Percent(carPhysics.BrakeInput * 100.0f);
-
-            if (drsStateLabel != null)
+            get
             {
-                drsStateLabel.text = carPhysics.DrsToggle == DrsState.Open ? "ACTIVE (OPEN)" : "CLOSED";
-                drsStateLabel.style.color = carPhysics.DrsToggle == DrsState.Open ? new StyleColor(new Color(0.06f, 0.72f, 0.51f)) : new StyleColor(new Color(0.97f, 0.98f, 0.99f));
+                return GridSense.ML.Track3InferenceRunner.Instance != null
+                    && GridSense.ML.Track3InferenceRunner.Instance.IsModelLoaded;
             }
         }
 
-        private void HandleCarStateUpdated(CarState state)
+        private void RecordCompletedLaps()
         {
-            if (lapCounterLabel != null)
-            {
-                int maxLaps = SimulationCore.Instance != null ? SimulationCore.Instance.TotalStintLaps : 20;
-                lapCounterLabel.text = $"LAP {state.Lap} / {maxLaps}";
-            }
+            F1TelemetryHUD hud = F1TelemetryHUD.Instance;
+            if (hud == null) return;
 
-            if (fuelRemainingLabel != null)
+            if (hud.CurrentLapNumber > lastSeenLap && hud.LastLapTime > 0f)
             {
-                fuelRemainingLabel.text = $"{state.FuelLoadKg:F1} kg";
-            }
-
-            if (batterySocPct != null) batterySocPct.text = $"{state.EnergyRemainingPct:F1}%";
-            if (batteryEnergyMj != null) batteryEnergyMj.text = $"{state.EnergyRemainingPct * 1.8f:F1} MJ / 180.0 MJ STINT POOL";
-            if (batterySocFill != null) batterySocFill.style.width = Length.Percent(Mathf.Clamp(state.EnergyRemainingPct, 0.0f, 100.0f));
-
-            if (gapAheadLabel != null)
-            {
-                gapAheadLabel.text = state.HasGapAhead ? $"+{state.GapAheadS:F2}s (DIRTY AIR: {(state.DirtyAir ? "YES" : "NO")})" : "CLEAR TRACK";
-            }
-
-            // Tyre compound badge
-            if (tyreCompoundBadge != null)
-            {
-                tyreCompoundBadge.text = $"{state.Compound.ToString().ToUpper()} — {state.Lap} LAPS";
-            }
-        }
-
-        private void HandleTrack1Updated(EnergyDeploymentExplainability exp)
-        {
-            if (modeBadgeText != null)
-            {
-                modeBadgeText.text = exp.RecommendedDeploymentMode.ToString().ToUpper();
-                Color modeColor = exp.RecommendedDeploymentMode switch
+                laps.Add(new LapRecord
                 {
-                    EnergyMode.Push => new Color(0.93f, 0.27f, 0.27f),       // Red
-                    EnergyMode.Balanced => new Color(0.06f, 0.72f, 0.51f),   // Green
-                    EnergyMode.Hold => new Color(0.96f, 0.62f, 0.04f),       // Amber
-                    EnergyMode.Save => new Color(0.02f, 0.71f, 0.83f),       // Cyan
-                    _ => Color.white
-                };
-                modeBadgeText.style.color = new StyleColor(modeColor);
-            }
+                    Lap = lastSeenLap,
+                    Time = hud.LastLapTime,
+                    Compound = car != null ? car.CurrentCompound : TyreCompound.Medium,
+                    WearPct = car != null ? car.TyreWearPct : 0f
+                });
+                if (bestLapSeen <= 0f || hud.LastLapTime < bestLapSeen) bestLapSeen = hud.LastLapTime;
 
-            float deployKw = exp.RecommendedDeploymentMode switch
-            {
-                EnergyMode.Push => 120.0f,
-                EnergyMode.Balanced => 45.0f,
-                EnergyMode.Hold => 0.0f,
-                EnergyMode.Save => -40.0f,
-                _ => 45.0f
-            };
-
-            if (powerFlowLabel != null)
-            {
-                powerFlowLabel.text = $"Deploy: {deployKw:+0.0;-0.0;0.0} kW | {exp.RecommendedBraking}";
-            }
-
-            if (closingRateLabel != null) closingRateLabel.text = $"{exp.DirtyAirOvertakeOpportunity * 0.5f:+0.00;-0.00;0.00} s / lap";
-            if (overtakeProbLabel != null) overtakeProbLabel.text = $"{exp.OvertakeRiskRewardScore:F1}% ({exp.RiskCategory})";
-
-            // Explainability Feature Bars
-            if (featGapFill != null) featGapFill.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.DirtyAirOvertakeOpportunity)) * 100.0f);
-            if (featGapVal != null) featGapVal.text = $"{exp.DirtyAirOvertakeOpportunity * 100.0f:+0;-0;0}%";
-
-            if (featSocFill != null) featSocFill.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.EnergyBudgetSurplusDeficitPct / 100.0f)) * 100.0f);
-            if (featSocVal != null) featSocVal.text = $"{exp.EnergyBudgetSurplusDeficitPct:+0;-0;0}%";
-
-            if (featWearFill != null) featWearFill.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.TyreWearPenaltyFactor)) * 100.0f);
-            if (featWearVal != null) featWearVal.text = $"{exp.TyreWearPenaltyFactor * -100.0f:+0;-0;0}%";
-
-            if (featThermFill != null) featThermFill.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.BrakeFadeThermalPenalty)) * 100.0f);
-            if (featThermVal != null) featThermVal.text = $"{exp.BrakeFadeThermalPenalty * -100.0f:+0;-0;0}%";
-        }
-
-        private void HandleTrack3Updated(TyreDegradationExplainability exp)
-        {
-            if (totalTyreDeltaLabel != null)
-            {
-                totalTyreDeltaLabel.text = $"{exp.TotalObservedDeltaS:+0.000;-0.000;0.000}s / lap";
-            }
-
-            // Feature breakdowns
-            if (deltaPureWearLabel != null) deltaPureWearLabel.text = $"{exp.TrueTyreDegradationDeltaS:+0.000;-0.000;0.000}s";
-            if (barPureWear != null) barPureWear.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.TrueTyreDegradationDeltaS) / 1.5f) * 100.0f);
-
-            if (deltaThermalLabel != null) deltaThermalLabel.text = $"+0.120s";
-            if (barThermal != null) barThermal.style.width = Length.Percent(Mathf.Clamp01(0.120f / 1.5f) * 100.0f);
-
-            if (deltaFuelLabel != null) deltaFuelLabel.text = $"{exp.FuelCorrectionDeltaS:+0.000;-0.000;0.000}s";
-            if (barFuel != null) barFuel.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.FuelCorrectionDeltaS) / 1.5f) * 100.0f);
-
-            if (deltaTrafficLabel != null) deltaTrafficLabel.text = $"{exp.TrafficDirtyAirDeltaS:+0.000;-0.000;0.000}s";
-            if (barTraffic != null) barTraffic.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.TrafficDirtyAirDeltaS) / 1.5f) * 100.0f);
-
-            if (deltaTrackLabel != null) deltaTrackLabel.text = $"{exp.TrackEvolutionDeltaS:+0.000;-0.000;0.000}s";
-            if (barTrack != null) barTrack.style.width = Length.Percent(Mathf.Clamp01(Mathf.Abs(exp.TrackEvolutionDeltaS) / 1.5f) * 100.0f);
-
-            if (strategyAdvisoryText != null)
-            {
-                int remainingLaps = Mathf.Max(1, Mathf.RoundToInt((35.0f - exp.PredictedWearPct) / 1.5f));
-                strategyAdvisoryText.text = $"Pure wear: {exp.PredictedWearPct:F1}%. Projected cliff in {remainingLaps} laps. Pit window open L19-L22.";
-            }
-        }
-
-        private void HandleSectorCompleted(int sector)
-        {
-            // Example sector update
-            if (sector == 1 && sector1Delta != null)
-            {
-                sector1Delta.text = "-0.084s";
-                sector1Delta.RemoveFromClassList("delta-yellow");
-                sector1Delta.AddToClassList("delta-purple");
-            }
-        }
-
-        private void HandleLapCompleted(int lap)
-        {
-            float lapDuration = sessionElapsedTime - currentLapStartTime;
-            currentLapStartTime = sessionElapsedTime;
-
-            if (lastLapTime != null)
-            {
-                int min = (int)(lapDuration / 60.0f);
-                float sec = lapDuration % 60.0f;
-                lastLapTime.text = $"{min}:{sec:05.3f}";
-            }
-
-            if (lapDuration < bestLapRecorded && lapDuration > 30.0f)
-            {
-                bestLapRecorded = lapDuration;
-                if (bestLapTime != null)
+                if (stintPlot != null)
                 {
-                    int min = (int)(bestLapRecorded / 60.0f);
-                    float sec = bestLapRecorded % 60.0f;
-                    bestLapTime.text = $"{min}:{sec:05.3f}";
+                    // measured wear is the physics engine's own signal; predicted and the band are
+                    // only supplied when Track 3 is genuinely running
+                    bool modelLive = Track3Live;
+                    TyreDegradationExplainability e = modelLive
+                        ? SimulationCore.Instance.TyreExplainability
+                        : default(TyreDegradationExplainability);
+                    stintPlot.AddLap(lastSeenLap,
+                        car != null ? car.TyreWearPct : 0f,
+                        e.PredictedWearPct, e.ConfidenceBandLowerPct, e.ConfidenceBandUpperPct,
+                        modelLive);
+                }
+
+                lastSeenLap = hud.CurrentLapNumber;
+                RebuildLapTable();
+            }
+        }
+
+        // ==================================================================== paint
+
+        private void PaintMasthead()
+        {
+            F1TelemetryHUD hud = F1TelemetryHUD.Instance;
+
+            if (sessionLine != null)
+            {
+                string circuit = hud != null ? hud.SelectedCircuit.ToString().ToUpperInvariant() : "--";
+                string comp = car != null
+                    ? Theme.CompoundName(car.CurrentCompound) + " " + Theme.CompoundCode(car.CurrentCompound)
+                    : "--";
+                sessionLine.text = circuit + "   ·   " + comp;
+            }
+
+            if (lapValue != null) lapValue.text = hud != null ? hud.CurrentLapNumber.ToString() : "--";
+            if (stintValue != null) stintValue.text = Clock(stintClock);
+            if (fuelValue != null)
+                fuelValue.text = CoreLive
+                    ? SimulationCore.Instance.State.FuelLoadKg.ToString("F1") + " kg"
+                    : "--";
+
+            if (inferenceValue != null)
+            {
+                bool both = Track1Live && Track3Live;
+                bool models = Track1Model && Track3Model;
+                bool any = Track1Live || Track3Live;
+                string one = Track1Live
+                    ? (Track1Model ? "TRACK 1" : "TRACK 1 HEURISTIC")
+                    : (Track3Model ? "TRACK 3" : "TRACK 3 HEURISTIC");
+                inferenceValue.text = !any ? "OFFLINE"
+                    : (both ? (models ? "TRACK 1 + 3" : "HEURISTIC") : one);
+                inferenceValue.EnableInClassList("is-offline", !(both && models));
+                inferenceValue.EnableInClassList("is-command", both && models);
+            }
+
+            if (footerRight != null)
+                footerRight.text = CoreLive
+                    ? "state source: SimulationCore.CarState"
+                    : "state source: CarPhysicsController (no SimulationCore in scene)";
+        }
+
+        private void PaintStint()
+        {
+            F1TelemetryHUD hud = F1TelemetryHUD.Instance;
+            if (hud == null) return;
+
+            if (stintStatus != null)
+            {
+                stintStatus.text = hud.IsRacing ? "LIVE" : "ON GRID";
+                stintStatus.EnableInClassList("is-offline", !hud.IsRacing);
+            }
+
+            if (lapElapsed != null) lapElapsed.text = Theme.LapTime(hud.CurrentLapTime);
+
+            if (lapDelta != null)
+            {
+                if (hud.BestLapTime > 0f)
+                {
+                    float d = hud.CurrentLapTime - hud.BestLapTime;
+                    lapDelta.text = Theme.Delta(d);
+                    lapDelta.style.color = Theme.DeltaInk(d);
+                }
+                else
+                {
+                    lapDelta.text = "no reference";
+                    lapDelta.style.color = Theme.InkDim;
                 }
             }
+
+            PaintSector(s1Bar, s1Time, 1, hud.S1Time, hud.BestS1Time, hud.ActiveSector, hud.CurrentSectorTime);
+            PaintSector(s2Bar, s2Time, 2, hud.S2Time, hud.BestS2Time, hud.ActiveSector, hud.CurrentSectorTime);
+            PaintSector(s3Bar, s3Time, 3, hud.S3Time, hud.BestS3Time, hud.ActiveSector, hud.CurrentSectorTime);
+
+            if (speedValue != null) speedValue.text = (car != null ? car.CurrentSpeedKmh : 0f).ToString("F0") + " km/h";
+
+            if (gearValue != null)
+            {
+                string g = "N";
+                if (car != null)
+                {
+                    if (car.CurrentGear == VehicleGear.Reverse) g = "R";
+                    else if (car.CurrentGear != VehicleGear.Neutral) g = ((int)car.CurrentGear).ToString();
+                }
+                gearValue.text = g;
+            }
+
+            if (drsValue != null)
+            {
+                bool open = car != null && car.DrsToggle == DrsState.Open;
+                bool armed = car != null && car.DrsToggle == DrsState.Available;
+                drsValue.text = open ? "OPEN" : (armed ? "ARMED" : "CLOSED");
+                drsValue.EnableInClassList("is-ok", open);
+                drsValue.EnableInClassList("is-caution", armed);
+            }
+
+            if (gapAheadValue != null)
+            {
+                if (CoreLive)
+                {
+                    CarState s = SimulationCore.Instance.State;
+                    gapAheadValue.text = s.HasGapAhead ? "+" + s.GapAheadS.ToString("F2") + " s" : "CLEAR";
+                    gapAheadValue.EnableInClassList("is-caution", s.DirtyAir);
+                }
+                else gapAheadValue.text = "--";
+            }
+
+            if (evolutionValue != null)
+                evolutionValue.text = CoreLive
+                    ? "×" + SimulationCore.Instance.State.TrackEvolutionFactor.ToString("F3")
+                    : "--";
+        }
+
+        private void PaintSector(VisualElement bar, Label time, int index,
+                                 float recorded, float best, int activeSector, float liveTime)
+        {
+            if (bar == null || time == null) return;
+
+            bar.RemoveFromClassList("is-active");
+            bar.RemoveFromClassList("is-personal");
+            bar.RemoveFromClassList("is-slower");
+            bar.RemoveFromClassList("is-best");
+
+            if (activeSector == index)
+            {
+                bar.AddToClassList("is-active");
+                time.text = liveTime.ToString("00.0");
+            }
+            else if (recorded > 0f)
+            {
+                bool personal = best > 0f && recorded <= best + 0.0005f;
+                bar.AddToClassList(personal ? "is-personal" : "is-slower");
+                time.text = Theme.Split(recorded);
+            }
+            else
+            {
+                time.text = "--.---";
+            }
+        }
+
+        private void RebuildLapTable()
+        {
+            if (lapTable == null) return;
+            lapTable.Clear();
+
+            int from = Mathf.Max(0, laps.Count - 8);
+            for (int i = laps.Count - 1; i >= from; i--)
+            {
+                LapRecord rec = laps[i];
+                VisualElement row = new VisualElement();
+                row.AddToClassList("lap-row");
+
+                row.Add(Cell(rec.Lap.ToString(), "lap-cell is-first", false));
+                row.Add(Cell(Theme.LapTime(rec.Time), "lap-cell",
+                    bestLapSeen > 0f && rec.Time <= bestLapSeen + 0.0005f));
+                row.Add(Cell(Theme.CompoundName(rec.Compound), "lap-cell", false));
+                row.Add(Cell(rec.WearPct.ToString("F1") + "%", "lap-cell", false));
+
+                lapTable.Add(row);
+            }
+
+            if (lapTableEmpty != null)
+                lapTableEmpty.style.display = laps.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private static Label Cell(string text, string classes, bool fastest)
+        {
+            Label l = new Label(text);
+            foreach (string c in classes.Split(' ')) l.AddToClassList(c);
+            if (fastest) l.AddToClassList("is-fastest");
+            return l;
+        }
+
+        // -------------------------------------------------------------------- track 3
+
+        private void PaintTrack3()
+        {
+            bool live = Track3Live;
+            if (track3Status != null)
+            {
+                track3Status.text = live ? (Track3Model ? "EBM · LIVE" : "HEURISTIC · NO MODEL") : "OFFLINE";
+                track3Status.EnableInClassList("is-offline", !live || !Track3Model);
+            }
+            if (track3Offline != null) track3Offline.style.display = live ? DisplayStyle.None : DisplayStyle.Flex;
+            if (track3Body != null) track3Body.EnableInClassList("hidden", !live);
+            if (!live) return;
+
+            TyreDegradationExplainability e = SimulationCore.Instance.TyreExplainability;
+
+            // scale every attribution bar to the largest contribution, so the widths are comparable
+            float max = Mathf.Max(0.05f, Mathf.Max(
+                Mathf.Max(Mathf.Abs(e.FuelCorrectionDeltaS), Mathf.Abs(e.TrafficDirtyAirDeltaS)),
+                Mathf.Max(Mathf.Abs(e.TrackEvolutionDeltaS), Mathf.Abs(e.TrueTyreDegradationDeltaS))));
+
+            Signed(fuelNeg, fuelPos, fuelValueS, e.FuelCorrectionDeltaS, max, "s");
+            Signed(trafficNeg, trafficPos, trafficValueS, e.TrafficDirtyAirDeltaS, max, "s");
+            Signed(evoNeg, evoPos, evolutionValueS, e.TrackEvolutionDeltaS, max, "s");
+            Signed(tyreNeg, tyrePos, tyreValueS, e.TrueTyreDegradationDeltaS, max, "s");
+
+            if (totalDeltaS != null)
+            {
+                totalDeltaS.text = Theme.Delta(e.TotalObservedDeltaS, 3) + " s";
+                totalDeltaS.style.color = Theme.DeltaInk(e.TotalObservedDeltaS);
+            }
+
+            PaintConfidenceBand(e);
+
+            float fl = car != null ? car.TyreWearFL : 0f;
+            float fr = car != null ? car.TyreWearFR : 0f;
+            float rl = car != null ? car.TyreWearRL : 0f;
+            float rr = car != null ? car.TyreWearRR : 0f;
+            float mean = (fl + fr + rl + rr) * 0.25f;
+
+            Corner(wearFL, wearFillFL, tempFL, fl, mean);
+            Corner(wearFR, wearFillFR, tempFR, fr, mean);
+            Corner(wearRL, wearFillRL, tempRL, rl, mean);
+            Corner(wearRR, wearFillRR, tempRR, rr, mean);
+        }
+
+        /// <summary>
+        /// The 95% band, drawn at the width the model actually reports. The build spec forbids
+        /// implying tighter confidence than the model has, so nothing here is clamped for looks.
+        /// </summary>
+        private void PaintConfidenceBand(TyreDegradationExplainability e)
+        {
+            float lo = e.ConfidenceBandLowerPct;
+            float hi = e.ConfidenceBandUpperPct;
+            float mid = e.PredictedWearPct;
+            float truth = e.GroundTruthWearPct;
+
+            float top = Mathf.Max(1f, Mathf.Max(Mathf.Max(hi, mid), truth) * 1.25f);
+
+            if (bandSpan != null)
+            {
+                float yHi = 1f - Mathf.Clamp01(hi / top);
+                float yLo = 1f - Mathf.Clamp01(lo / top);
+                bandSpan.style.top = Length.Percent(yHi * 100f);
+                bandSpan.style.height = Length.Percent(Mathf.Max(1f, (yLo - yHi) * 100f));
+            }
+            if (bandLine != null) bandLine.style.top = Length.Percent((1f - Mathf.Clamp01(mid / top)) * 100f);
+            if (bandTruth != null) bandTruth.style.top = Length.Percent((1f - Mathf.Clamp01(truth / top)) * 100f);
+
+            if (bandLower != null) bandLower.text = "lower " + lo.ToString("F1") + "%";
+            if (bandPredicted != null) bandPredicted.text = "predicted " + mid.ToString("F1") + "%";
+            if (bandUpper != null) bandUpper.text = "upper " + hi.ToString("F1") + "%";
+            if (groundTruthValue != null) groundTruthValue.text = truth.ToString("F1") + "%";
+            if (residualValue != null)
+            {
+                float residual = Mathf.Abs(e.ResidualErrorPct);
+                residualValue.text = e.ResidualErrorPct.ToString("F2") + " pts";
+                residualValue.EnableInClassList("is-caution", residual > 3f && residual <= 6f);
+                residualValue.EnableInClassList("is-warning", residual > 6f);
+            }
+        }
+
+        private void Corner(Label value, VisualElement fill, Label note, float wear, float mean)
+        {
+            if (value != null) value.text = wear.ToString("F1") + "%";
+            if (fill != null)
+            {
+                fill.style.width = Length.Percent(Mathf.Clamp01(wear / 100f) * 100f);
+                fill.style.backgroundColor = Theme.WearInk(wear);
+            }
+            if (note != null)
+            {
+                float d = wear - mean;
+                note.text = (d >= 0f ? "+" : "") + d.ToString("F1") + " vs car mean";
+            }
+        }
+
+        // -------------------------------------------------------------------- track 1
+
+        private void PaintTrack1()
+        {
+            bool live = Track1Live;
+            if (track1Status != null)
+            {
+                track1Status.text = live ? (Track1Model ? "PPO · LIVE" : "HEURISTIC · NO MODEL") : "OFFLINE";
+                track1Status.EnableInClassList("is-offline", !live || !Track1Model);
+            }
+            if (track1Offline != null) track1Offline.style.display = live ? DisplayStyle.None : DisplayStyle.Flex;
+            if (track1Body != null) track1Body.EnableInClassList("hidden", !live);
+            if (!live) return;
+
+            EnergyDeploymentExplainability e = SimulationCore.Instance.EnergyExplainability;
+            CarState s = SimulationCore.Instance.State;
+
+            if (modeCommand != null) modeCommand.text = e.RecommendedDeploymentMode.ToString().ToUpperInvariant();
+            if (modeActual != null)
+            {
+                string actual = car != null && car.IsBoostActive ? "PUSH"
+                    : (car != null && car.IsRegenerating ? "SAVE" : s.DeploymentMode.ToString().ToUpperInvariant());
+                modeActual.text = actual;
+            }
+            if (rationale != null)
+                rationale.text = string.IsNullOrEmpty(e.ExplanationSummary) ? "--" : e.ExplanationSummary;
+
+            if (brakingCommand != null) brakingCommand.text = e.RecommendedBraking.ToString().ToUpperInvariant();
+
+            if (riskValue != null) riskValue.text = e.OvertakeRiskRewardScore.ToString("F0") + " / 100";
+            if (riskFill != null)
+            {
+                riskFill.style.width = Length.Percent(Mathf.Clamp01(e.OvertakeRiskRewardScore / 100f) * 100f);
+                riskFill.style.backgroundColor = RiskInk(e.RiskCategory);
+            }
+            if (riskCategory != null)
+            {
+                riskCategory.text = e.RiskCategory.ToString().ToUpperInvariant();
+                riskCategory.style.color = RiskInk(e.RiskCategory);
+            }
+
+            float soc = car != null ? car.BatteryEnergyPct : s.EnergyRemainingPct;
+            float target = car != null ? car.OptimalBatteryEnergyPct : s.EnergyRemainingPct;
+
+            if (socFill != null) socFill.style.width = Length.Percent(Mathf.Clamp01(soc / 100f) * 100f);
+            if (socBug != null)
+            {
+                // CarPhysicsController.OptimalBatteryEnergyPct is a physics heuristic, not policy
+                // output, so this marker is drawn in Ink. Command magenta stays reserved for the
+                // model's own recommendations.
+                socBug.style.left = Length.Percent(Mathf.Clamp01(target / 100f) * 100f);
+                socBug.style.backgroundColor = Theme.Ink;
+            }
+            if (socValue != null) socValue.text = soc.ToString("F0") + "%";
+            if (budgetDelta != null)
+            {
+                float d = e.EnergyBudgetSurplusDeficitPct;
+                budgetDelta.text = (d >= 0f ? "+" : "") + d.ToString("F1") + " pts";
+                budgetDelta.EnableInClassList("is-ok", d >= 0f);
+                budgetDelta.EnableInClassList("is-caution", d < 0f);
+            }
+
+            float max = Mathf.Max(0.05f, Mathf.Max(
+                Mathf.Max(Mathf.Abs(e.EnergyBudgetSurplusDeficitPct), Mathf.Abs(e.TyreWearPenaltyFactor)),
+                Mathf.Max(Mathf.Abs(e.BrakeFadeThermalPenalty), Mathf.Abs(e.DirtyAirOvertakeOpportunity))));
+
+            Signed(budgetNeg, budgetPos, budgetFactor, e.EnergyBudgetSurplusDeficitPct, max, "");
+            Signed(wearPenNeg, wearPenPos, wearPenFactor, -Mathf.Abs(e.TyreWearPenaltyFactor), max, "");
+            Signed(brakePenNeg, brakePenPos, brakePenFactor, -Mathf.Abs(e.BrakeFadeThermalPenalty), max, "");
+            Signed(oppNeg, oppPos, oppFactor, e.DirtyAirOvertakeOpportunity, max, "");
+        }
+
+        private static Color RiskInk(OvertakeRiskCategory c)
+        {
+            if (c == OvertakeRiskCategory.Critical) return Theme.Warning;
+            if (c == OvertakeRiskCategory.High) return Theme.Caution;
+            if (c == OvertakeRiskCategory.Moderate) return Theme.Ink;
+            return Theme.Ok;
+        }
+
+        // -------------------------------------------------------------------- helpers
+
+        /// <summary>
+        /// Lays out one signed attribution bar. Negative grows left from the axis in Ok green
+        /// (time gained, or a favourable weight); positive grows right in Warning red.
+        /// </summary>
+        private static void Signed(VisualElement neg, VisualElement pos, Label value,
+                                   float v, float absMax, string unit)
+        {
+            float f = Mathf.Clamp01(Mathf.Abs(v) / Mathf.Max(0.0001f, absMax)) * 50f;
+
+            if (neg != null)
+            {
+                bool on = v < 0f;
+                neg.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+                if (on)
+                {
+                    neg.style.right = Length.Percent(50f);
+                    neg.style.left = StyleKeyword.Auto;
+                    neg.style.width = Length.Percent(f);
+                }
+            }
+            if (pos != null)
+            {
+                bool on = v >= 0f;
+                pos.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+                if (on)
+                {
+                    pos.style.left = Length.Percent(50f);
+                    pos.style.right = StyleKeyword.Auto;
+                    pos.style.width = Length.Percent(f);
+                }
+            }
+            if (value != null)
+                value.text = Theme.Delta(v, unit == "s" ? 3 : 2) + (string.IsNullOrEmpty(unit) ? "" : " " + unit);
+        }
+
+        private static string Clock(float seconds)
+        {
+            int m = Mathf.FloorToInt(seconds / 60f);
+            float s = seconds - m * 60f;
+            return string.Format("{0}:{1:00.0}", m, s);
         }
     }
 }

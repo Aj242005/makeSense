@@ -1,596 +1,563 @@
-/* GridSense AI Motorsport Intelligence - Pit-Wall Dashboard Stylesheet */
+/* ============================================================================
+   GridSense pit wall — engineering console.
+
+   Two rules govern everything here:
+     1. Command versus actual. Model output is magenta; the driver's actual is
+        plain ink. Never the reverse.
+     2. Enclosure discipline. A rule appears only where two coordinate systems
+        meet — under a column header, along an axis, between two readouts that
+        are measured differently. Panels do not get borders for being panels.
+
+   The tone ramp is enumerated. There are no other greys in this file.
+   ========================================================================= */
 
 :root {
-    --bg-primary: rgba(11, 15, 25, 0.95);
-    --bg-card: rgba(20, 27, 45, 0.85);
-    --bg-card-hover: rgba(30, 41, 69, 0.9);
-    --border-color: rgba(56, 189, 248, 0.2);
-    --border-glow: rgba(56, 189, 248, 0.5);
-    
-    --neon-cyan: #06b6d4;
-    --neon-green: #10b981;
-    --neon-amber: #f59e0b;
-    --neon-ruby: #ef4444;
-    --neon-purple: #a855f7;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
-    
-    font-size: 13px;
-    color: var(--text-main);
-    width: 100%;
-    height: 100%;
+    /* --- tone ramp (the only neutrals) --- */
+    --ground: rgb(7, 9, 11);
+    --panel: rgb(14, 18, 23);
+    --rule: rgb(33, 42, 52);
+    --ink-dim: rgb(110, 124, 137);
+    --ink: rgb(174, 186, 197);
+    --ink-hi: rgb(234, 240, 245);
+
+    /* --- hues, reserved for meaning --- */
+    --command: rgb(255, 45, 155);
+    --energy: rgb(53, 200, 255);
+    --ok: rgb(47, 211, 122);
+    --caution: rgb(240, 166, 46);
+    --warning: rgb(255, 74, 74);
+
+    --sector-best: rgb(180, 75, 255);
+    --sector-personal: rgb(47, 211, 122);
+    --sector-slower: rgb(240, 201, 58);
+
+    --soft: rgb(255, 74, 74);
+    --medium: rgb(240, 201, 58);
+    --hard: rgb(234, 240, 245);
 }
 
-.dashboard-root {
-    width: 100%;
-    height: 100%;
-    background-color: var(--bg-primary);
-    padding: 12px;
-    flex-direction: column;
+/* ---------------------------------------------------------------- shell */
+
+.pitwall-root {
+    flex-grow: 1;
+    background-color: var(--ground);
+    padding: 22px 26px 18px 26px;
+}
+
+/* ---------------------------------------------------------------- masthead */
+
+.masthead {
+    flex-direction: row;
+    align-items: flex-end;
     justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--rule);
 }
 
-/* TOP HEADER */
-.header-container {
-    height: 60px;
-    background-color: var(--bg-card);
-    border-width: 1px;
-    border-color: var(--border-color);
-    border-radius: 8px;
-    padding: 8px 16px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.title-box {
-    flex-direction: row;
-    align-items: center;
-}
-
-.logo-badge {
-    background-color: #dc2626;
-    color: #ffffff;
-    font-size: 14px;
-    -unity-font-style: bold;
-    padding: 4px 10px;
-    border-radius: 4px;
-    margin-right: 12px;
-}
-
-.header-title {
-    font-size: 16px;
-    -unity-font-style: bold;
-    color: var(--text-main);
-}
-
-.header-subtitle {
-    font-size: 11px;
-    color: var(--neon-cyan);
-}
-
-.telemetry-meta-bar {
-    flex-direction: row;
-    align-items: center;
-}
-
-.meta-pill {
-    background-color: rgba(15, 23, 42, 0.8);
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    padding: 4px 12px;
-    margin-left: 8px;
+.masthead-left {
     flex-direction: column;
-    align-items: center;
 }
 
-.meta-pill-label {
-    font-size: 9px;
-    color: var(--text-dim);
+.wordmark {
+    font-size: 30px;
     -unity-font-style: bold;
+    color: var(--ink-hi);
+    letter-spacing: 1px;
 }
 
-.meta-pill-value {
-    font-size: 13px;
+.wordmark-sub {
+    font-size: 10px;
     -unity-font-style: bold;
-    color: var(--text-main);
+    color: var(--ink-dim);
+    margin-top: 1px;
 }
 
-.live-indicator {
-    background-color: rgba(16, 185, 129, 0.2);
-    border-color: var(--neon-green);
+.masthead-right {
+    flex-direction: row;
+    align-items: flex-end;
 }
 
-.live-indicator .meta-pill-value {
-    color: var(--neon-green);
+.stat {
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: 30px;
 }
 
-/* MAIN CONTENT 3-COLUMN GRID */
-.main-content {
+.stat-label {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: var(--ink-dim);
+}
+
+.stat-value {
+    font-size: 17px;
+    -unity-font-style: bold;
+    color: var(--ink-hi);
+    margin-top: 2px;
+}
+
+.stat-value.is-command { color: var(--command); }
+.stat-value.is-energy  { color: var(--energy); }
+.stat-value.is-offline { color: var(--caution); }
+
+/* ---------------------------------------------------------------- columns */
+
+.deck {
     flex-grow: 1;
     flex-direction: row;
-    justify-content: space-between;
+    margin-top: 16px;
 }
 
-.column-panel {
+.column {
     flex-grow: 1;
     flex-basis: 0;
-    background-color: var(--bg-card);
-    border-width: 1px;
-    border-color: var(--border-color);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 0 4px;
+    flex-direction: column;
+    margin-right: 24px;
+}
+
+.column.is-last { margin-right: 0; }
+
+.column-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--rule);
+}
+
+.column-title {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.column-status {
+    font-size: 10px;
+    color: var(--ok);
+}
+
+.column-status.is-offline { color: var(--caution); }
+
+.block {
+    margin-top: 18px;
+}
+
+.block-title {
+    font-size: 10px;
+    -unity-font-style: bold;
+    color: var(--ink-dim);
+    margin-bottom: 7px;
+}
+
+/* ---------------------------------------------------------------- readouts */
+
+.readout {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.readout-key {
+    font-size: 12px;
+    color: var(--ink-dim);
+}
+
+.readout-value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.readout-value.is-hi      { color: var(--ink-hi); }
+.readout-value.is-command { color: var(--command); }
+.readout-value.is-ok      { color: var(--ok); }
+.readout-value.is-caution { color: var(--caution); }
+.readout-value.is-warning { color: var(--warning); }
+.readout-value.is-energy  { color: var(--energy); }
+
+/* the headline pair: what the model wants, against what is happening */
+
+.command-pair {
+    flex-direction: row;
+    margin-bottom: 4px;
+}
+
+.command-cell {
+    flex-grow: 1;
+    flex-basis: 0;
     flex-direction: column;
 }
 
-.panel-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom-width: 1px;
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-    padding-bottom: 6px;
-    margin-bottom: 10px;
-}
-
-.panel-title {
-    font-size: 13px;
-    -unity-font-style: bold;
-    color: var(--text-main);
-}
-
-.panel-tag {
+.command-cell-label {
     font-size: 10px;
-    color: var(--neon-cyan);
-    background-color: rgba(6, 182, 212, 0.15);
-    padding: 2px 6px;
-    border-radius: 4px;
+    -unity-font-style: bold;
+    color: var(--ink-dim);
 }
 
-/* LEFT COLUMN: DRIVER TELEMETRY */
-.speed-gear-container {
+.command-cell-value {
+    font-size: 27px;
+    -unity-font-style: bold;
+    color: var(--ink-hi);
+    margin-top: 1px;
+}
+
+.command-cell-value.is-command { color: var(--command); }
+
+.command-note {
+    font-size: 11px;
+    color: var(--ink-dim);
+    white-space: normal;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top-width: 1px;
+    border-top-color: var(--rule);
+}
+
+/* ---------------------------------------------------------------- bars */
+
+.bar-row {
     flex-direction: row;
-    justify-content: space-around;
     align-items: center;
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
-.gear-display {
-    width: 60px;
-    height: 60px;
-    background-color: #1e293b;
-    border-width: 2px;
-    border-color: var(--neon-cyan);
-    border-radius: 8px;
-    align-items: center;
+.bar-key {
+    font-size: 11px;
+    color: var(--ink-dim);
+    width: 74px;
+    flex-shrink: 0;
+}
+
+.bar-track {
+    flex-grow: 1;
+    height: 7px;
+    background-color: var(--rule);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--ink);
+}
+
+.bar-fill.is-energy  { background-color: var(--energy); }
+.bar-fill.is-ok      { background-color: var(--ok); }
+.bar-fill.is-caution { background-color: var(--caution); }
+.bar-fill.is-warning { background-color: var(--warning); }
+.bar-fill.is-command { background-color: var(--command); }
+
+.bar-value {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ink);
+    width: 62px;
+    flex-shrink: 0;
+    -unity-text-align: middle-right;
+}
+
+/* the command bug: where the model wants this bar to sit */
+.bar-bug {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 13px;
+    background-color: var(--command);
+}
+
+.bar-track-holder {
+    flex-grow: 1;
+    height: 7px;
     justify-content: center;
 }
 
-.gear-text {
-    font-size: 32px;
-    -unity-font-style: bold;
-    color: var(--neon-cyan);
-}
+/* ---------------------------------------------------------------- attribution */
 
-.speed-display {
+/*  A signed bar growing from a centre axis. The sign carries as much
+    information as the magnitude, so the axis is always drawn.  */
+
+.attrib-row {
+    flex-direction: row;
     align-items: center;
+    margin-bottom: 7px;
 }
 
-.speed-value {
-    font-size: 36px;
-    -unity-font-style: bold;
-    color: var(--text-main);
-}
-
-.speed-unit {
+.attrib-key {
     font-size: 11px;
-    color: var(--text-dim);
+    color: var(--ink);
+    width: 118px;
+    flex-shrink: 0;
 }
 
-.rpm-bar-container {
-    margin-bottom: 8px;
-}
-
-.rpm-labels {
-    flex-direction: row;
-    justify-content: space-between;
-    margin-bottom: 2px;
-}
-
-.telemetry-bar-bg {
-    height: 12px;
-    background-color: #1e293b;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 6px;
-}
-
-.rpm-bar-fill {
-    height: 100%;
-    width: 75%;
-    background-color: var(--neon-amber);
-    border-radius: 4px;
-}
-
-.input-bars-row {
-    flex-direction: row;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.input-bar-group {
+.attrib-plot {
     flex-grow: 1;
-    margin: 0 4px;
+    height: 15px;
+    flex-direction: row;
+    justify-content: center;
+    border-left-width: 0;
 }
 
-.throttle-fill {
-    height: 100%;
-    width: 80%;
-    background-color: var(--neon-green);
+.attrib-axis {
+    position: absolute;
+    width: 1px;
+    height: 15px;
+    background-color: var(--rule);
 }
 
-.brake-fill {
-    height: 100%;
+.attrib-neg,
+.attrib-pos {
+    position: absolute;
+    height: 9px;
+    top: 3px;
     width: 0%;
-    background-color: var(--neon-ruby);
 }
 
-.chassis-map-box {
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px;
-    margin-top: 4px;
+.attrib-neg { background-color: var(--ok); }
+.attrib-pos { background-color: var(--warning); }
+
+.attrib-value {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ink-hi);
+    width: 66px;
+    flex-shrink: 0;
+    -unity-text-align: middle-right;
 }
 
-.chassis-row {
+.attrib-total {
     flex-direction: row;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top-width: 1px;
+    border-top-color: var(--rule);
 }
 
-.tyre-corner-card {
-    width: 48%;
-    background-color: #1e293b;
-    border-radius: 4px;
-    padding: 6px;
-    border-left-width: 3px;
-    border-left-color: var(--neon-green);
+.attrib-total-key {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--ink);
+}
+
+.attrib-total-value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--ink-hi);
+}
+
+/* ---------------------------------------------------------------- corners */
+
+.corner-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.corner {
+    width: 47%;
+    margin-bottom: 9px;
+}
+
+.corner-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
 }
 
 .corner-label {
     font-size: 10px;
     -unity-font-style: bold;
-    color: var(--text-muted);
+    color: var(--ink-dim);
+}
+
+.corner-value {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--ink-hi);
+}
+
+.corner-track {
+    height: 5px;
+    background-color: var(--rule);
+    margin-top: 3px;
+    overflow: hidden;
+}
+
+.corner-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--ok);
 }
 
 .corner-temp {
-    font-size: 13px;
-    -unity-font-style: bold;
-    color: var(--text-main);
+    font-size: 10px;
+    color: var(--ink-dim);
+    margin-top: 2px;
 }
 
-.corner-sub {
-    font-size: 9px;
-    color: var(--text-dim);
+/* ---------------------------------------------------------------- confidence */
+
+/*  The band is drawn at its true width. Narrowing it to look confident would
+    misrepresent the model, which the build spec forbids explicitly.  */
+
+.band {
+    height: 46px;
+    background-color: var(--panel);
+    margin-top: 4px;
+    justify-content: center;
 }
 
-/* MIDDLE COLUMN: TRACK 1 ENERGY & TACTICAL */
-.soc-gauge-card {
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 10px;
-    align-items: center;
-    margin-bottom: 10px;
+.band-span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background-color: rgba(53, 200, 255, 0.16);
 }
 
-.soc-value-text {
-    font-size: 32px;
-    -unity-font-style: bold;
-    color: var(--neon-cyan);
+.band-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--energy);
 }
 
-.soc-sub-text {
-    font-size: 11px;
-    color: var(--text-muted);
+.band-truth {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--command);
 }
 
-.soc-bar-bg {
-    width: 100%;
-    height: 14px;
-    background-color: #1e293b;
-    border-radius: 4px;
-    margin-top: 6px;
-    overflow: hidden;
-}
-
-.soc-bar-fill {
-    height: 100%;
-    width: 74%;
-    background-color: var(--neon-cyan);
-}
-
-.mode-badge-container {
+.band-legend {
     flex-direction: row;
     justify-content: space-between;
-    align-items: center;
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px 12px;
-    margin-bottom: 10px;
+    margin-top: 4px;
 }
 
-.mode-badge {
-    background-color: rgba(16, 185, 129, 0.25);
-    border-width: 1px;
-    border-color: var(--neon-green);
-    border-radius: 4px;
-    padding: 4px 12px;
+.band-legend-item {
+    font-size: 10px;
+    color: var(--ink-dim);
 }
 
-.mode-badge-text {
-    color: var(--neon-green);
-    font-size: 13px;
-    -unity-font-style: bold;
-}
+/* ---------------------------------------------------------------- sectors */
 
-.tactical-intel-box {
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 10px;
-}
-
-.tactical-row {
+.sector-row {
     flex-direction: row;
-    justify-content: space-between;
-    margin-bottom: 4px;
+    margin-top: 2px;
 }
 
-.tactical-label {
-    font-size: 11px;
-    color: var(--text-muted);
-}
-
-.tactical-val {
-    font-size: 11px;
-    -unity-font-style: bold;
-    color: var(--text-main);
-}
-
-.explainability-section {
+.sector {
     flex-grow: 1;
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px;
+    flex-basis: 0;
+    margin-right: 6px;
 }
 
-.feature-bar-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
+.sector.is-last { margin-right: 0; }
+
+.sector-bar {
+    height: 2px;
+    background-color: var(--rule);
 }
 
-.feature-name {
-    width: 90px;
-    font-size: 10px;
-    color: var(--text-muted);
-}
+.sector-bar.is-active   { background-color: var(--ink-hi); }
+.sector-bar.is-personal { background-color: var(--sector-personal); }
+.sector-bar.is-best     { background-color: var(--sector-best); }
+.sector-bar.is-slower   { background-color: var(--sector-slower); }
 
-.feature-bar-track {
-    flex-grow: 1;
-    height: 8px;
-    background-color: #1e293b;
-    border-radius: 3px;
-    margin: 0 8px;
-    overflow: hidden;
-}
-
-.feature-bar-val {
-    height: 100%;
-    width: 45%;
-    background-color: var(--neon-purple);
-}
-
-.feature-weight-text {
-    width: 40px;
-    font-size: 10px;
-    color: var(--text-main);
-    -unity-text-align: middle-right;
-}
-
-/* RIGHT COLUMN: TRACK 3 TYRE DEGRADATION ISOLATION */
-.tyre-headline-card {
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-.compound-badge {
-    background-color: #f59e0b;
-    color: #0f172a;
-    font-size: 11px;
-    -unity-font-style: bold;
-    padding: 2px 8px;
-    border-radius: 4px;
-    align-self: flex-start;
-    margin-bottom: 6px;
-}
-
-.total-delta-text {
-    font-size: 26px;
-    -unity-font-style: bold;
-    color: var(--neon-ruby);
-}
-
-.degradation-breakdown-box {
-    flex-grow: 1;
-    background-color: rgba(15, 23, 42, 0.6);
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 10px;
-}
-
-.breakdown-item {
-    margin-bottom: 6px;
-}
-
-.breakdown-item-header {
+.sector-body {
     flex-direction: row;
     justify-content: space-between;
-    margin-bottom: 2px;
+    margin-top: 3px;
 }
 
-.breakdown-label {
-    font-size: 11px;
-    color: var(--text-main);
-}
-
-.breakdown-val {
-    font-size: 11px;
-    -unity-font-style: bold;
-}
-
-.breakdown-bar-bg {
-    height: 8px;
-    background-color: #1e293b;
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.breakdown-bar-wear {
-    height: 100%;
-    width: 58%;
-    background-color: var(--neon-ruby);
-}
-
-.breakdown-bar-thermal {
-    height: 100%;
-    width: 31%;
-    background-color: var(--neon-amber);
-}
-
-.breakdown-bar-fuel {
-    height: 100%;
-    width: 64%;
-    background-color: var(--neon-cyan);
-}
-
-.breakdown-bar-traffic {
-    height: 100%;
-    width: 41%;
-    background-color: var(--neon-purple);
-}
-
-.breakdown-bar-track {
-    height: 100%;
-    width: 28%;
-    background-color: var(--neon-green);
-}
-
-.strategy-call-card {
-    background-color: rgba(6, 182, 212, 0.15);
-    border-width: 1px;
-    border-color: var(--neon-cyan);
-    border-radius: 6px;
-    padding: 8px;
-}
-
-.strategy-title {
-    font-size: 11px;
-    -unity-font-style: bold;
-    color: var(--neon-cyan);
-    margin-bottom: 2px;
-}
-
-.strategy-desc {
+.sector-label {
     font-size: 10px;
-    color: var(--text-main);
-}
-
-/* BOTTOM SECTOR TIMING & DELTAS */
-.timing-panel {
-    height: 64px;
-    background-color: var(--bg-card);
-    border-width: 1px;
-    border-color: var(--border-color);
-    border-radius: 8px;
-    padding: 6px 12px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 8px;
-}
-
-.sector-boxes-row {
-    flex-direction: row;
-}
-
-.sector-card {
-    background-color: rgba(15, 23, 42, 0.8);
-    border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 4px 14px;
-    margin-right: 8px;
-    align-items: center;
-}
-
-.sector-title {
-    font-size: 10px;
-    color: var(--text-dim);
     -unity-font-style: bold;
+    color: var(--ink-dim);
 }
 
 .sector-time {
-    font-size: 14px;
+    font-size: 11px;
     -unity-font-style: bold;
-    color: var(--text-main);
+    color: var(--ink);
 }
 
-.sector-delta {
+/* ---------------------------------------------------------------- lap table */
+
+.lap-head,
+.lap-row {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 3px 0 3px 0;
+}
+
+.lap-head {
+    border-bottom-width: 1px;
+    border-bottom-color: var(--rule);
+    margin-bottom: 2px;
+}
+
+.lap-cell {
+    font-size: 11px;
+    color: var(--ink);
+    flex-grow: 1;
+    flex-basis: 0;
+    -unity-text-align: middle-right;
+}
+
+.lap-cell.is-first {
+    -unity-text-align: middle-left;
+    flex-grow: 0;
+    width: 34px;
+}
+
+.lap-head .lap-cell {
     font-size: 10px;
     -unity-font-style: bold;
-    color: var(--neon-green);
+    color: var(--ink-dim);
 }
 
-.delta-purple {
-    color: var(--neon-purple);
+.lap-row.is-current .lap-cell { color: var(--ink-hi); }
+.lap-cell.is-fastest { color: var(--sector-best); }
+
+/* ---------------------------------------------------------------- offline */
+
+.offline {
+    padding: 12px 0 12px 0;
 }
 
-.delta-green {
-    color: var(--neon-green);
+.offline-title {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: var(--caution);
 }
 
-.delta-yellow {
-    color: var(--neon-amber);
+.offline-body {
+    font-size: 11px;
+    color: var(--ink-dim);
+    white-space: normal;
+    margin-top: 5px;
 }
 
-.lap-times-summary {
+.hidden { display: none; }
+
+/* ---------------------------------------------------------------- footer */
+
+.footer {
     flex-direction: row;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top-width: 1px;
+    border-top-color: var(--rule);
 }
 
-.lap-stat {
-    margin-left: 16px;
-    align-items: flex-end;
-}
-
-.lap-stat-label {
-    font-size: 9px;
-    color: var(--text-dim);
-    -unity-font-style: bold;
-}
-
-.lap-stat-time {
-    font-size: 14px;
-    -unity-font-style: bold;
-    color: var(--text-main);
+.footer-note {
+    font-size: 10px;
+    color: var(--ink-dim);
 }
