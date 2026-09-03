@@ -106,12 +106,13 @@ namespace GridSense.Environment
 
                 if (F1TelemetryHUD.Instance != null && F1TelemetryHUD.Instance.CachedCenterline != null && F1TelemetryHUD.Instance.CachedCenterline.Count > 22)
                 {
-                    int sIdx = (F1TelemetryHUD.Instance.SelectedCircuit == CircuitType.Monza) ? 0 : 20;
-                    Vector3 p = F1TelemetryHUD.Instance.CachedCenterline[sIdx];
-                    Vector3 next = F1TelemetryHUD.Instance.CachedCenterline[sIdx + 1];
-                    Vector3 fwd = (next - p).normalized;
-                    resetPos = p + Vector3.up * 0.564f;
-                    resetRot = Quaternion.LookRotation(fwd, Vector3.up);
+                    // put the car back on its painted pole box rather than on the line itself
+                    Vector3 slotPos;
+                    Quaternion slotRot;
+                    TrackVisualBuilder.GetGridSlot(F1TelemetryHUD.Instance.CachedCenterline,
+                        F1TelemetryHUD.Instance.SelectedCircuit, 0, out slotPos, out slotRot);
+                    resetPos = slotPos + Vector3.up * 0.564f;
+                    resetRot = slotRot;
                 }
 
                 target.position = resetPos;

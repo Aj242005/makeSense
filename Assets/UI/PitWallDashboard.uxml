@@ -1,332 +1,376 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:Style src="project://database/Assets/UI/PitWallDashboard.uss?fileID=7433441132597870071&amp;guid=d189e3a70d17d8440903d61d7aa9c802&amp;type=3#PitWallDashboard" />
-    
-    <ui:VisualElement name="DashboardRoot" class="dashboard-root">
-        <!-- TOP HEADER -->
-        <ui:VisualElement name="HeaderContainer" class="header-container">
-            <ui:VisualElement class="title-box">
-                <ui:Label text="SF-23 #16" class="logo-badge" />
-                <ui:VisualElement>
-                    <ui:Label text="GridSense AI Motorsport Intelligence" class="header-title" />
-                    <ui:Label name="CircuitLabel" text="Bahrain International Circuit — Grand Prix Layout" class="header-subtitle" />
-                </ui:VisualElement>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/PitWallDashboard.uss" />
+
+    <ui:VisualElement name="PitWallRoot" class="pitwall-root">
+
+        <!-- ============================================================ masthead -->
+        <ui:VisualElement class="masthead">
+            <ui:VisualElement class="masthead-left">
+                <ui:Label text="PIT WALL" class="wordmark" />
+                <ui:Label name="SessionLine" text="--" class="wordmark-sub" />
             </ui:VisualElement>
-            
-            <ui:VisualElement class="telemetry-meta-bar">
-                <ui:VisualElement class="meta-pill live-indicator">
-                    <ui:Label text="SYSTEM STATUS" class="meta-pill-label" />
-                    <ui:Label name="SystemStatusLabel" text="LIVE 50Hz AI" class="meta-pill-value" />
+
+            <ui:VisualElement class="masthead-right">
+                <ui:VisualElement class="stat">
+                    <ui:Label text="LAP" class="stat-label" />
+                    <ui:Label name="LapValue" text="--" class="stat-value" />
                 </ui:VisualElement>
-                <ui:VisualElement class="meta-pill">
-                    <ui:Label text="CURRENT LAP" class="meta-pill-label" />
-                    <ui:Label name="LapCounterLabel" text="LAP 14 / 20" class="meta-pill-value" />
+                <ui:VisualElement class="stat">
+                    <ui:Label text="STINT TIME" class="stat-label" />
+                    <ui:Label name="StintValue" text="--" class="stat-value" />
                 </ui:VisualElement>
-                <ui:VisualElement class="meta-pill">
-                    <ui:Label text="FUEL REMAINING" class="meta-pill-label" />
-                    <ui:Label name="FuelRemainingLabel" text="78.4 kg" class="meta-pill-value" />
+                <ui:VisualElement class="stat">
+                    <ui:Label text="FUEL" class="stat-label" />
+                    <ui:Label name="FuelValue" text="--" class="stat-value" />
                 </ui:VisualElement>
-                <ui:VisualElement class="meta-pill">
-                    <ui:Label text="STINT TIME" class="meta-pill-label" />
-                    <ui:Label name="StintTimeLabel" text="21:04.82" class="meta-pill-value" />
+                <ui:VisualElement class="stat">
+                    <ui:Label text="INFERENCE" class="stat-label" />
+                    <ui:Label name="InferenceValue" text="OFFLINE" class="stat-value is-offline" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- MAIN 3-COLUMN CONTENT GRID -->
-        <ui:VisualElement name="MainContent" class="main-content">
-            <!-- COLUMN 1: LIVE DRIVER TELEMETRY & CHASSIS MAP -->
-            <ui:VisualElement name="TelemetryColumn" class="column-panel">
-                <ui:VisualElement class="panel-header">
-                    <ui:Label text="DRIVER TELEMETRY &amp; CHASSIS" class="panel-title" />
-                    <ui:Label text="50Hz CAN BUS" class="panel-tag" />
+        <!-- ============================================================ deck -->
+        <ui:VisualElement class="deck">
+
+            <!-- ---------------------------------------------------- column 1: stint -->
+            <ui:VisualElement class="column">
+                <ui:VisualElement class="column-head">
+                    <ui:Label text="STINT" class="column-title" />
+                    <ui:Label name="StintStatus" text="LIVE" class="column-status" />
                 </ui:VisualElement>
 
-                <!-- Speed & Gear Display -->
-                <ui:VisualElement class="speed-gear-container">
-                    <ui:VisualElement class="gear-display">
-                        <ui:Label name="GearValue" text="7" class="gear-text" />
+                <ui:VisualElement class="block">
+                    <ui:Label text="CURRENT LAP" class="block-title" />
+                    <ui:VisualElement class="command-pair">
+                        <ui:VisualElement class="command-cell">
+                            <ui:Label text="ELAPSED" class="command-cell-label" />
+                            <ui:Label name="LapElapsed" text="0:00.000" class="command-cell-value" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="command-cell">
+                            <ui:Label text="DELTA TO BEST" class="command-cell-label" />
+                            <ui:Label name="LapDelta" text="--" class="command-cell-value" />
+                        </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:VisualElement class="speed-display">
-                        <ui:Label name="SpeedValue" text="294" class="speed-value" />
-                        <ui:Label text="KM / H" class="speed-unit" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
 
-                <!-- RPM Bar -->
-                <ui:VisualElement class="rpm-bar-container">
-                    <ui:VisualElement class="rpm-labels">
-                        <ui:Label text="ENGINE SPEED" class="meta-pill-label" />
-                        <ui:Label name="RpmValue" text="11,850 RPM" class="meta-pill-label" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="telemetry-bar-bg">
-                        <ui:VisualElement name="RpmBarFill" class="rpm-bar-fill" style="width: 79%;" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <!-- Throttle & Brake Pedals -->
-                <ui:VisualElement class="input-bars-row">
-                    <ui:VisualElement class="input-bar-group">
-                        <ui:VisualElement class="rpm-labels">
-                            <ui:Label text="THROTTLE" class="meta-pill-label" />
-                            <ui:Label name="ThrottleValue" text="85%" class="meta-pill-label" />
+                    <ui:VisualElement class="sector-row">
+                        <ui:VisualElement class="sector">
+                            <ui:VisualElement name="S1Bar" class="sector-bar" />
+                            <ui:VisualElement class="sector-body">
+                                <ui:Label text="S1" class="sector-label" />
+                                <ui:Label name="S1Time" text="--.---" class="sector-time" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                        <ui:VisualElement class="telemetry-bar-bg">
-                            <ui:VisualElement name="ThrottleBarFill" class="throttle-fill" style="width: 85%;" />
+                        <ui:VisualElement class="sector">
+                            <ui:VisualElement name="S2Bar" class="sector-bar" />
+                            <ui:VisualElement class="sector-body">
+                                <ui:Label text="S2" class="sector-label" />
+                                <ui:Label name="S2Time" text="--.---" class="sector-time" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                    </ui:VisualElement>
-                    <ui:VisualElement class="input-bar-group">
-                        <ui:VisualElement class="rpm-labels">
-                            <ui:Label text="BRAKE" class="meta-pill-label" />
-                            <ui:Label name="BrakeValue" text="0%" class="meta-pill-label" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="telemetry-bar-bg">
-                            <ui:VisualElement name="BrakeBarFill" class="brake-fill" style="width: 0%;" />
+                        <ui:VisualElement class="sector is-last">
+                            <ui:VisualElement name="S3Bar" class="sector-bar" />
+                            <ui:VisualElement class="sector-body">
+                                <ui:Label text="S3" class="sector-label" />
+                                <ui:Label name="S3Time" text="--.---" class="sector-time" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
 
-                <!-- G-Force & DRS Readouts -->
-                <ui:VisualElement class="tactical-intel-box">
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="LATERAL ACCEL" class="tactical-label" />
-                        <ui:Label name="LatGValue" text="+3.42 G" class="tactical-val" />
+                <ui:VisualElement class="block">
+                    <ui:Label text="DRIVER" class="block-title" />
+                    <ui:VisualElement class="readout">
+                        <ui:Label text="Speed" class="readout-key" />
+                        <ui:Label name="SpeedValue" text="0 km/h" class="readout-value is-hi" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="LONGITUDINAL ACCEL" class="tactical-label" />
-                        <ui:Label name="LongGValue" text="-0.85 G" class="tactical-val" />
+                    <ui:VisualElement class="readout">
+                        <ui:Label text="Gear" class="readout-key" />
+                        <ui:Label name="GearValue" text="N" class="readout-value is-hi" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="DRS REAR WING" class="tactical-label" />
-                        <ui:Label name="DrsStateLabel" text="CLOSED" class="tactical-val" />
+                    <ui:VisualElement class="readout">
+                        <ui:Label text="DRS" class="readout-key" />
+                        <ui:Label name="DrsValue" text="CLOSED" class="readout-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="readout">
+                        <ui:Label text="Gap ahead" class="readout-key" />
+                        <ui:Label name="GapAheadValue" text="CLEAR" class="readout-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="readout">
+                        <ui:Label text="Track evolution" class="readout-key" />
+                        <ui:Label name="EvolutionValue" text="--" class="readout-value" />
                     </ui:VisualElement>
                 </ui:VisualElement>
 
-                <!-- 4-Wheel Chassis Temperature Map -->
-                <ui:VisualElement class="chassis-map-box">
-                    <ui:VisualElement class="chassis-row">
-                        <ui:VisualElement class="tyre-corner-card">
-                            <ui:Label text="FRONT LEFT (FL)" class="corner-label" />
-                            <ui:Label name="TyreTempFL" text="98.2°C" class="corner-temp" />
-                            <ui:Label name="BrakeTempFL" text="Brake: 480°C" class="corner-sub" />
+                <ui:VisualElement class="block">
+                    <ui:Label text="COMPLETED LAPS" class="block-title" />
+                    <ui:VisualElement class="lap-head">
+                        <ui:Label text="LAP" class="lap-cell is-first" />
+                        <ui:Label text="TIME" class="lap-cell" />
+                        <ui:Label text="COMPOUND" class="lap-cell" />
+                        <ui:Label text="WEAR" class="lap-cell" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="LapTable" />
+                    <ui:Label name="LapTableEmpty" text="No completed laps yet. Times appear here as the stint runs."
+                              class="offline-body" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- ------------------------------------ column 2: track 3, degradation -->
+            <ui:VisualElement class="column">
+                <ui:VisualElement class="column-head">
+                    <ui:Label text="TRACK 3 · TYRE DEGRADATION ISOLATION" class="column-title" />
+                    <ui:Label name="Track3Status" text="OFFLINE" class="column-status is-offline" />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="Track3Offline" class="offline">
+                    <ui:Label text="No inference running." class="offline-title" />
+                    <ui:Label class="offline-body"
+                              text="Add SimulationCore and Track3InferenceRunner to the scene to decompose lap time into fuel, traffic, track evolution and true tyre wear. Nothing is shown here until the model produces it." />
+                </ui:VisualElement>
+
+                <ui:VisualElement name="Track3Body" class="hidden">
+                    <ui:VisualElement class="block">
+                        <ui:Label text="WHERE THE LAP TIME WENT / SECONDS VS BASELINE" class="block-title" />
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Fuel load" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="FuelNeg" class="attrib-neg" />
+                                <ui:VisualElement name="FuelPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="FuelValueS" text="--" class="attrib-value" />
                         </ui:VisualElement>
-                        <ui:VisualElement class="tyre-corner-card">
-                            <ui:Label text="FRONT RIGHT (FR)" class="corner-label" />
-                            <ui:Label name="TyreTempFR" text="101.5°C" class="corner-temp" />
-                            <ui:Label name="BrakeTempFR" text="Brake: 510°C" class="corner-sub" />
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Traffic / dirty air" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="TrafficNeg" class="attrib-neg" />
+                                <ui:VisualElement name="TrafficPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="TrafficValueS" text="--" class="attrib-value" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Track evolution" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="EvolutionNeg" class="attrib-neg" />
+                                <ui:VisualElement name="EvolutionPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="EvolutionValueS" text="--" class="attrib-value" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="True tyre wear" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="TyreNeg" class="attrib-neg" />
+                                <ui:VisualElement name="TyrePos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="TyreValueS" text="--" class="attrib-value" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="attrib-total">
+                            <ui:Label text="Total observed delta" class="attrib-total-key" />
+                            <ui:Label name="TotalDeltaS" text="--" class="attrib-total-value" />
                         </ui:VisualElement>
                     </ui:VisualElement>
-                    <ui:VisualElement class="chassis-row">
-                        <ui:VisualElement class="tyre-corner-card">
-                            <ui:Label text="REAR LEFT (RL)" class="corner-label" />
-                            <ui:Label name="TyreTempRL" text="104.1°C" class="corner-temp" />
-                            <ui:Label name="BrakeTempRL" text="Brake: 420°C" class="corner-sub" />
+
+                    <ui:VisualElement class="block">
+                        <ui:Label text="DEGRADATION CURVE / MEASURED AGAINST PREDICTED" class="block-title" />
+                        <ui:VisualElement name="StintPlotHost" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="block">
+                        <ui:Label text="ISOLATED WEAR / PREDICTION AGAINST GROUND TRUTH" class="block-title" />
+                        <ui:VisualElement name="ConfidenceBand" class="band">
+                            <ui:VisualElement name="BandSpan" class="band-span" />
+                            <ui:VisualElement name="BandLine" class="band-line" />
+                            <ui:VisualElement name="BandTruth" class="band-truth" />
                         </ui:VisualElement>
-                        <ui:VisualElement class="tyre-corner-card">
-                            <ui:Label text="REAR RIGHT (RR)" class="corner-label" />
-                            <ui:Label name="TyreTempRR" text="105.8°C" class="corner-temp" />
-                            <ui:Label name="BrakeTempRR" text="Brake: 435°C" class="corner-sub" />
+                        <ui:VisualElement class="band-legend">
+                            <ui:Label name="BandLower" text="--" class="band-legend-item" />
+                            <ui:Label name="BandPredicted" text="--" class="band-legend-item" />
+                            <ui:Label name="BandUpper" text="--" class="band-legend-item" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="readout" style="margin-top: 8px;">
+                            <ui:Label text="Physics ground truth" class="readout-key" />
+                            <ui:Label name="GroundTruthValue" text="--" class="readout-value is-command" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="readout">
+                            <ui:Label text="Residual error" class="readout-key" />
+                            <ui:Label name="ResidualValue" text="--" class="readout-value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="block">
+                        <ui:Label text="WEAR BY CORNER" class="block-title" />
+                        <ui:VisualElement class="corner-grid">
+                            <ui:VisualElement class="corner">
+                                <ui:VisualElement class="corner-head">
+                                    <ui:Label text="FRONT LEFT" class="corner-label" />
+                                    <ui:Label name="WearFL" text="--" class="corner-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="corner-track">
+                                    <ui:VisualElement name="WearFillFL" class="corner-fill" />
+                                </ui:VisualElement>
+                                <ui:Label name="TempFL" text="--" class="corner-temp" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="corner">
+                                <ui:VisualElement class="corner-head">
+                                    <ui:Label text="FRONT RIGHT" class="corner-label" />
+                                    <ui:Label name="WearFR" text="--" class="corner-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="corner-track">
+                                    <ui:VisualElement name="WearFillFR" class="corner-fill" />
+                                </ui:VisualElement>
+                                <ui:Label name="TempFR" text="--" class="corner-temp" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="corner">
+                                <ui:VisualElement class="corner-head">
+                                    <ui:Label text="REAR LEFT" class="corner-label" />
+                                    <ui:Label name="WearRL" text="--" class="corner-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="corner-track">
+                                    <ui:VisualElement name="WearFillRL" class="corner-fill" />
+                                </ui:VisualElement>
+                                <ui:Label name="TempRL" text="--" class="corner-temp" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="corner">
+                                <ui:VisualElement class="corner-head">
+                                    <ui:Label text="REAR RIGHT" class="corner-label" />
+                                    <ui:Label name="WearRR" text="--" class="corner-value" />
+                                </ui:VisualElement>
+                                <ui:VisualElement class="corner-track">
+                                    <ui:VisualElement name="WearFillRR" class="corner-fill" />
+                                </ui:VisualElement>
+                                <ui:Label name="TempRR" text="--" class="corner-temp" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <!-- COLUMN 2: TRACK 1 ENERGY INTELLIGENCE & TACTICAL AI -->
-            <ui:VisualElement name="EnergyColumn" class="column-panel">
-                <ui:VisualElement class="panel-header">
-                    <ui:Label text="TRACK 1: ENERGY DEPLOYMENT AI" class="panel-title" />
-                    <ui:Label text="PPO CONVERGED" class="panel-tag" />
+            <!-- ------------------------------------ column 3: track 1, energy -->
+            <ui:VisualElement class="column is-last">
+                <ui:VisualElement class="column-head">
+                    <ui:Label text="TRACK 1 · ENERGY DEPLOYMENT" class="column-title" />
+                    <ui:Label name="Track1Status" text="OFFLINE" class="column-status is-offline" />
                 </ui:VisualElement>
 
-                <!-- Battery SoC Gauge -->
-                <ui:VisualElement class="soc-gauge-card">
-                    <ui:Label name="BatterySocPct" text="74.2%" class="soc-value-text" />
-                    <ui:Label name="BatteryEnergyMj" text="133.6 MJ / 180.0 MJ STINT POOL" class="soc-sub-text" />
-                    <ui:VisualElement class="soc-bar-bg">
-                        <ui:VisualElement name="BatterySocFill" class="soc-bar-fill" style="width: 74.2%;" />
-                    </ui:VisualElement>
+                <ui:VisualElement name="Track1Offline" class="offline">
+                    <ui:Label text="No inference running." class="offline-title" />
+                    <ui:Label class="offline-body"
+                              text="Add SimulationCore and Track1InferenceRunner to the scene to receive a deployment recommendation, a braking call for the next zone, and a scored overtake window. No recommendation is invented in its absence." />
                 </ui:VisualElement>
 
-                <!-- Recommended Strategy Badge -->
-                <ui:VisualElement class="mode-badge-container">
-                    <ui:VisualElement>
-                        <ui:Label text="OPTIMAL HYBRID MODE" class="meta-pill-label" />
-                        <ui:Label name="PowerFlowLabel" text="Deploy: +45.0 kW | MGU-K" class="corner-sub" />
-                    </ui:VisualElement>
-                    <ui:VisualElement name="ModeBadge" class="mode-badge">
-                        <ui:Label name="ModeBadgeText" text="BALANCED" class="mode-badge-text" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <!-- Tactical Battle Intel -->
-                <ui:VisualElement class="tactical-intel-box">
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="GAP TO CAR AHEAD" class="tactical-label" />
-                        <ui:Label name="GapAheadLabel" text="+1.24s (DIRTY AIR: YES)" class="tactical-val" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="CLOSING RATE" class="tactical-label" />
-                        <ui:Label name="ClosingRateLabel" text="+0.32 s / lap" class="tactical-val" />
-                    </ui:VisualElement>
-                    <ui:VisualElement class="tactical-row">
-                        <ui:Label text="OVERTAKE PROBABILITY" class="tactical-label" />
-                        <ui:Label name="OvertakeProbLabel" text="78.5% (WINDOW: OPEN)" class="tactical-val" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <!-- Explainability Feature Contribution Bars -->
-                <ui:VisualElement class="explainability-section">
-                    <ui:Label text="NEURAL POLICY FEATURE CONTRIBUTIONS" class="meta-pill-label" style="margin-bottom: 6px;" />
-                    
-                    <ui:VisualElement class="feature-bar-row">
-                        <ui:Label text="Gap Ahead" class="feature-name" />
-                        <ui:VisualElement class="feature-bar-track">
-                            <ui:VisualElement name="FeatGapFill" class="feature-bar-val" style="width: 72%;" />
+                <ui:VisualElement name="Track1Body" class="hidden">
+                    <ui:VisualElement class="block">
+                        <ui:Label text="DEPLOYMENT MODE" class="block-title" />
+                        <ui:VisualElement class="command-pair">
+                            <ui:VisualElement class="command-cell">
+                                <ui:Label text="COMMAND" class="command-cell-label" />
+                                <ui:Label name="ModeCommand" text="--" class="command-cell-value is-command" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="command-cell">
+                                <ui:Label text="ACTUAL" class="command-cell-label" />
+                                <ui:Label name="ModeActual" text="--" class="command-cell-value" />
+                            </ui:VisualElement>
                         </ui:VisualElement>
-                        <ui:Label name="FeatGapVal" text="+42%" class="feature-weight-text" />
+                        <ui:Label name="Rationale" text="--" class="command-note" />
                     </ui:VisualElement>
 
-                    <ui:VisualElement class="feature-bar-row">
-                        <ui:Label text="SoC Budget Margin" class="feature-name" />
-                        <ui:VisualElement class="feature-bar-track">
-                            <ui:VisualElement name="FeatSocFill" class="feature-bar-val" style="width: 55%;" />
+                    <ui:VisualElement class="block">
+                        <ui:Label text="NEXT BRAKING ZONE" class="block-title" />
+                        <ui:VisualElement class="readout">
+                            <ui:Label text="Commanded braking" class="readout-key" />
+                            <ui:Label name="BrakingCommand" text="--" class="readout-value is-command" />
                         </ui:VisualElement>
-                        <ui:Label name="FeatSocVal" text="+28%" class="feature-weight-text" />
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="feature-bar-row">
-                        <ui:Label text="Corner Wear Risk" class="feature-name" />
-                        <ui:VisualElement class="feature-bar-track">
-                            <ui:VisualElement name="FeatWearFill" class="feature-bar-val" style="width: 25%; background-color: #ef4444;" />
+                        <ui:VisualElement class="readout">
+                            <ui:Label text="Overtake risk / reward" class="readout-key" />
+                            <ui:Label name="RiskValue" text="--" class="readout-value" />
                         </ui:VisualElement>
-                        <ui:Label name="FeatWearVal" text="-12%" class="feature-weight-text" />
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="feature-bar-row">
-                        <ui:Label text="Thermal Derate Risk" class="feature-name" />
-                        <ui:VisualElement class="feature-bar-track">
-                            <ui:VisualElement name="FeatThermFill" class="feature-bar-val" style="width: 15%; background-color: #ef4444;" />
-                        </ui:VisualElement>
-                        <ui:Label name="FeatThermVal" text="-06%" class="feature-weight-text" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-            </ui:VisualElement>
-
-            <!-- COLUMN 3: TRACK 3 TYRE DEGRADATION ISOLATION MODEL -->
-            <ui:VisualElement name="TyreColumn" class="column-panel">
-                <ui:VisualElement class="panel-header">
-                    <ui:Label text="TRACK 3: PURE TYRE ISOLATION" class="panel-title" />
-                    <ui:Label text="EBM / NEURAL GAM" class="panel-tag" />
-                </ui:VisualElement>
-
-                <!-- Compound & Total Confound Delta -->
-                <ui:VisualElement class="tyre-headline-card">
-                    <ui:Label name="TyreCompoundBadge" text="MEDIUM (C3) — 14 LAPS" class="compound-badge" />
-                    <ui:Label text="TOTAL PACE DELTA" class="meta-pill-label" />
-                    <ui:Label name="TotalTyreDeltaLabel" text="+1.428s / lap" class="total-delta-text" />
-                </ui:VisualElement>
-
-                <!-- Additive Feature Confound Breakdown -->
-                <ui:VisualElement class="degradation-breakdown-box">
-                    <ui:Label text="ISOLATED DELTA CONTRIBUTIONS (s/lap)" class="meta-pill-label" style="margin-bottom: 6px;" />
-
-                    <!-- 1. Pure Mechanical Wear -->
-                    <ui:VisualElement class="breakdown-item">
-                        <ui:VisualElement class="breakdown-item-header">
-                            <ui:Label text="1. Pure Mechanical Wear" class="breakdown-label" />
-                            <ui:Label name="DeltaPureWearLabel" text="+0.584s" class="breakdown-val" style="color: #ef4444;" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="breakdown-bar-bg">
-                            <ui:VisualElement name="BarPureWear" class="breakdown-bar-wear" style="width: 58%;" />
+                        <ui:VisualElement class="bar-row">
+                            <ui:Label text="Score" class="bar-key" />
+                            <ui:VisualElement class="bar-track">
+                                <ui:VisualElement name="RiskFill" class="bar-fill" />
+                            </ui:VisualElement>
+                            <ui:Label name="RiskCategory" text="--" class="bar-value" />
                         </ui:VisualElement>
                     </ui:VisualElement>
 
-                    <!-- 2. Thermal Penalty -->
-                    <ui:VisualElement class="breakdown-item">
-                        <ui:VisualElement class="breakdown-item-header">
-                            <ui:Label text="2. Thermal Degradation (>100°C)" class="breakdown-label" />
-                            <ui:Label name="DeltaThermalLabel" text="+0.312s" class="breakdown-val" style="color: #f59e0b;" />
+                    <ui:VisualElement class="block">
+                        <ui:Label text="ENERGY BUDGET" class="block-title" />
+                        <ui:VisualElement class="bar-row">
+                            <ui:Label text="State of charge" class="bar-key" />
+                            <ui:VisualElement class="bar-track-holder">
+                                <ui:VisualElement class="bar-track">
+                                    <ui:VisualElement name="SocFill" class="bar-fill is-energy" />
+                                </ui:VisualElement>
+                                <ui:VisualElement name="SocBug" class="bar-bug" />
+                            </ui:VisualElement>
+                            <ui:Label name="SocValue" text="--" class="bar-value" />
                         </ui:VisualElement>
-                        <ui:VisualElement class="breakdown-bar-bg">
-                            <ui:VisualElement name="BarThermal" class="breakdown-bar-thermal" style="width: 31%;" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-
-                    <!-- 3. Fuel Mass Confound -->
-                    <ui:VisualElement class="breakdown-item">
-                        <ui:VisualElement class="breakdown-item-header">
-                            <ui:Label text="3. Fuel Mass Correction (-32kg)" class="breakdown-label" />
-                            <ui:Label name="DeltaFuelLabel" text="-0.640s" class="breakdown-val" style="color: #06b6d4;" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="breakdown-bar-bg">
-                            <ui:VisualElement name="BarFuel" class="breakdown-bar-fuel" style="width: 64%;" />
+                        <ui:VisualElement class="readout">
+                            <ui:Label text="Versus heuristic baseline" class="readout-key" />
+                            <ui:Label name="BudgetDelta" text="--" class="readout-value" />
                         </ui:VisualElement>
                     </ui:VisualElement>
 
-                    <!-- 4. Traffic / Dirty Air -->
-                    <ui:VisualElement class="breakdown-item">
-                        <ui:VisualElement class="breakdown-item-header">
-                            <ui:Label text="4. Traffic Wake &amp; Dirty Air" class="breakdown-label" />
-                            <ui:Label name="DeltaTrafficLabel" text="+0.410s" class="breakdown-val" style="color: #a855f7;" />
+                    <ui:VisualElement class="block">
+                        <ui:Label text="WHY / ATTRIBUTION WEIGHTS" class="block-title" />
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Energy surplus" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="BudgetNeg" class="attrib-neg" />
+                                <ui:VisualElement name="BudgetPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="BudgetFactor" text="--" class="attrib-value" />
                         </ui:VisualElement>
-                        <ui:VisualElement class="breakdown-bar-bg">
-                            <ui:VisualElement name="BarTraffic" class="breakdown-bar-traffic" style="width: 41%;" />
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Tyre wear penalty" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="WearPenNeg" class="attrib-neg" />
+                                <ui:VisualElement name="WearPenPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="WearPenFactor" text="--" class="attrib-value" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Brake fade risk" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="BrakePenNeg" class="attrib-neg" />
+                                <ui:VisualElement name="BrakePenPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="BrakePenFactor" text="--" class="attrib-value" />
+                        </ui:VisualElement>
+
+                        <ui:VisualElement class="attrib-row">
+                            <ui:Label text="Overtake opportunity" class="attrib-key" />
+                            <ui:VisualElement class="attrib-plot">
+                                <ui:VisualElement class="attrib-axis" />
+                                <ui:VisualElement name="OppNeg" class="attrib-neg" />
+                                <ui:VisualElement name="OppPos" class="attrib-pos" />
+                            </ui:VisualElement>
+                            <ui:Label name="OppFactor" text="--" class="attrib-value" />
                         </ui:VisualElement>
                     </ui:VisualElement>
-
-                    <!-- 5. Track Evolution -->
-                    <ui:VisualElement class="breakdown-item">
-                        <ui:VisualElement class="breakdown-item-header">
-                            <ui:Label text="5. Track Evolution Grip (+2.8%)" class="breakdown-label" />
-                            <ui:Label name="DeltaTrackLabel" text="-0.280s" class="breakdown-val" style="color: #10b981;" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="breakdown-bar-bg">
-                            <ui:VisualElement name="BarTrack" class="breakdown-bar-track" style="width: 28%;" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <!-- Stint Strategy Call -->
-                <ui:VisualElement class="strategy-call-card">
-                    <ui:Label text="PIT WINDOW ADVISORY" class="strategy-title" />
-                    <ui:Label name="StrategyAdvisoryText" text="Tire cliff projected in 8 laps. Box Lap 21 for HARD compound." class="strategy-desc" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- BOTTOM PANEL: SECTOR SPLITS & LAP TIMES -->
-        <ui:VisualElement name="TimingPanel" class="timing-panel">
-            <ui:VisualElement class="sector-boxes-row">
-                <ui:VisualElement class="sector-card">
-                    <ui:Label text="SECTOR 1" class="sector-title" />
-                    <ui:Label name="Sector1Time" text="28.412s" class="sector-time" />
-                    <ui:Label name="Sector1Delta" text="-0.084s" class="sector-delta delta-purple" />
-                </ui:VisualElement>
-                <ui:VisualElement class="sector-card">
-                    <ui:Label text="SECTOR 2" class="sector-title" />
-                    <ui:Label name="Sector2Time" text="39.105s" class="sector-time" />
-                    <ui:Label name="Sector2Delta" text="+0.021s" class="sector-delta delta-yellow" />
-                </ui:VisualElement>
-                <ui:VisualElement class="sector-card">
-                    <ui:Label text="SECTOR 3" class="sector-title" />
-                    <ui:Label name="Sector3Time" text="22.840s" class="sector-time" />
-                    <ui:Label name="Sector3Delta" text="-0.110s" class="sector-delta delta-green" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-
-            <ui:VisualElement class="lap-times-summary">
-                <ui:VisualElement class="lap-stat">
-                    <ui:Label text="LAST LAP" class="lap-stat-label" />
-                    <ui:Label name="LastLapTime" text="1:30.357" class="lap-stat-time" />
-                </ui:VisualElement>
-                <ui:VisualElement class="lap-stat">
-                    <ui:Label text="BEST LAP" class="lap-stat-label" />
-                    <ui:Label name="BestLapTime" text="1:29.840" class="lap-stat-time" style="color: #a855f7;" />
-                </ui:VisualElement>
-                <ui:VisualElement class="lap-stat">
-                    <ui:Label text="OPTIMAL LAP" class="lap-stat-label" />
-                    <ui:Label name="OptimalLapTime" text="1:29.410" class="lap-stat-time" style="color: #10b981;" />
-                </ui:VisualElement>
-            </ui:VisualElement>
+        <!-- ============================================================ footer -->
+        <ui:VisualElement class="footer">
+            <ui:Label name="FooterLeft" text="P  close pit wall" class="footer-note" />
+            <ui:Label name="FooterRight" text="--" class="footer-note" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

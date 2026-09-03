@@ -145,15 +145,25 @@ namespace GridSense.Physics
             }
         }
 
-        private float GetCompoundWearMultiplier()
+        /// <summary>
+        /// The compound wear multiplier this simulation actually applies. Public and static so the
+        /// UI reads the same number the physics uses: TyreCompoundProfile.BaseWearRateMultiplier
+        /// carries different values and has no consumer in the simulation at all.
+        /// </summary>
+        public static float WearMultiplierFor(TyreCompound compound)
         {
-            switch (CurrentCompound)
+            switch (compound)
             {
                 case TyreCompound.Soft: return 2.20f;
                 case TyreCompound.Medium: return 1.25f;
                 case TyreCompound.Hard: return 0.70f;
                 default: return 1.00f;
             }
+        }
+
+        private float GetCompoundWearMultiplier()
+        {
+            return WearMultiplierFor(CurrentCompound);
         }
 
         private void Update()
